@@ -132,7 +132,7 @@ export function DashboardTab({
   const readinessLabel = readiness >= 85 ? 'Optimal' : readiness >= 70 ? 'Primed' : 'Recovering';
 
   return (
-    <div className="px-4 pt-4 pb-28 space-y-4">
+    <div className="px-4 pt-4 pb-36 space-y-4">
       {/* 1. Hero Quote Card (Gradient-bordered glass card) */}
       <section
         className="p-[1px] rounded-3xl"

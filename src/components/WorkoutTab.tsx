@@ -133,9 +133,17 @@ export function WorkoutTab({
   };
 
   return (
-    <div className="pb-28 space-y-4">
-      {/* 1. Horizontal 7-Day Split Selector */}
-      <div className="px-4 pt-3">
+    <div className="pb-36 space-y-4">
+      {/* 1. Horizontal 7-Day Split Selector (Gender-Filtered) */}
+      <div className="px-4 pt-3 space-y-2">
+        <div className="flex items-center justify-between text-[11px]">
+          <span className="font-semibold text-white/60">
+            {user.gender === 'female' ? 'Female Split' : 'Male Split'} · {user.goal}
+          </span>
+          <span className="font-mono-tabular text-white/45">
+            Plan v{user.planVersion ?? 1}
+          </span>
+        </div>
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
           {user.split.map((day) => {
             const active = day.dayIndex === currentDay.dayIndex;
@@ -518,7 +526,7 @@ export function WorkoutTab({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-5"
+            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-5"
             role="dialog"
             aria-modal="true"
           >

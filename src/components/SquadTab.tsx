@@ -90,7 +90,7 @@ export function SquadTab({
   };
 
   return (
-    <div className="px-4 pt-4 pb-28 space-y-4">
+    <div className="px-4 pt-4 pb-36 space-y-4">
       {/* Top Summary Banner */}
       <section
         className="rounded-3xl p-5 bg-[#12141C]/90 backdrop-blur-xl border border-white/[0.1] shadow-lg space-y-2.5"
@@ -452,7 +452,7 @@ export function SquadTab({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-3"
+              className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-3"
               role="dialog"
               aria-modal="true"
               onClick={() => setSelectedFriendId(null)}

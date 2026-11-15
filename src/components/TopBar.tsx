@@ -110,7 +110,7 @@ export function TopBar({
 
       {/* Quick User Switcher Drawer */}
       {switcherOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex justify-center items-start pt-16 px-4">
+        <div className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-xs flex justify-center items-start pt-16 px-4">
           <div className="w-full max-w-[398px] bg-[#12141C] border border-white/12 rounded-3xl p-4 shadow-2xl space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-white">Switch Athlete</h3>
@@ -199,7 +199,7 @@ export function TopBar({
 
       {/* Notifications Drawer */}
       {notifOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex justify-center items-start pt-16 px-4">
+        <div className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-xs flex justify-center items-start pt-16 px-4">
           <div className="w-full max-w-[398px] bg-[#12141C] border border-white/12 rounded-3xl p-4 shadow-2xl space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-white">Athlete Alerts & Hype</h3>

@@ -148,7 +148,7 @@ export function ProgressTab({
   };
 
   return (
-    <div className="px-4 pt-4 pb-28 space-y-4">
+    <div className="px-4 pt-4 pb-36 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -474,7 +474,7 @@ export function ProgressTab({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-3"
+            className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-3"
             role="dialog"
             aria-modal="true"
             onClick={() => setLogModalOpen(false)}

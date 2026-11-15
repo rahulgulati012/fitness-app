@@ -10,7 +10,7 @@ interface ToastOverlayProps {
 
 export function ToastOverlay({ toasts, onDismiss, theme }: ToastOverlayProps) {
   return (
-    <div className="fixed top-3 left-1/2 -translate-x-1/2 w-[calc(100%-24px)] max-w-[406px] z-50 pointer-events-none flex flex-col gap-2">
+    <div className="fixed top-3 left-1/2 -translate-x-1/2 w-[calc(100%-24px)] max-w-[406px] z-[10001] pointer-events-none flex flex-col gap-2">
       <AnimatePresence>
         {toasts.map((toast) => {
           const Icon =

@@ -84,38 +84,32 @@ export function ProfileTab({
   onSignOut,
   onResetDemoData,
 }: ProfileTabProps) {
-  const [gender, setGender] = useState<Gender>(user.gender);
+  const goalOptions = user.gender === 'female' ? FEMALE_GOALS : MALE_GOALS;
   const [weightKg, setWeightKg] = useState(user.metrics.weightKg);
   const [heightCm, setHeightCm] = useState(user.metrics.heightCm);
   const [age, setAge] = useState(user.metrics.age);
-  const [goal, setGoal] = useState<PhysiqueGoal>(user.goal);
+  const [goal, setGoal] = useState<PhysiqueGoal>(() =>
+    goalOptions.some((g) => g.title === user.goal) ? user.goal : goalOptions[0].title
+  );
   const [workoutTime, setWorkoutTime] = useState(user.schedule.workoutTime);
   const [bedTime, setBedTime] = useState(user.schedule.bedTime);
   const [regenerating, setRegenerating] = useState(false);
 
-  const goalOptions = gender === 'female' ? FEMALE_GOALS : MALE_GOALS;
   const bmi = calculateBmi(heightCm, weightKg);
   const waterTarget = calculateWaterTargetMl(weightKg);
-  const sleepTarget = calculateSleepTargetHours(gender);
-
-  const handleGenderSwitch = (nextGender: Gender) => {
-    setGender(nextGender);
-    const matchingGoals = nextGender === 'female' ? FEMALE_GOALS : MALE_GOALS;
-    if (!matchingGoals.some((g) => g.title === goal)) {
-      setGoal(matchingGoals[0].title);
-    }
-  };
+  const sleepTarget = calculateSleepTargetHours(user.gender);
 
   const handleSaveAndRegenerate = async () => {
     setRegenerating(true);
     const nextPlanVersion = (user.planVersion ?? 0) + 1;
     const nextMetrics = { heightCm, weightKg, age };
     const nextSchedule = { ...user.schedule, workoutTime, bedTime };
+    const safeGoal = goalOptions.some((g) => g.title === goal) ? goal : goalOptions[0].title;
 
     const result = await generateAthleteBlueprint({
       name: user.name,
-      gender,
-      goal,
+      gender: user.gender,
+      goal: safeGoal,
       metrics: nextMetrics,
       schedule: nextSchedule,
       variationSeed: nextPlanVersion,
@@ -124,9 +118,9 @@ export function ProfileTab({
 
     setRegenerating(false);
     onUpdateProfileAndPlan({
-      gender,
+      gender: user.gender,
       metrics: nextMetrics,
-      goal,
+      goal: safeGoal,
       schedule: nextSchedule,
       split: result.split,
       quotes: result.quotes,
@@ -136,7 +130,7 @@ export function ProfileTab({
   };
 
   return (
-    <div className="px-4 pt-4 pb-28 space-y-4">
+    <div className="px-4 pt-4 pb-36 space-y-4">
       {/* Athlete Summary Card */}
       <section className="bg-[#12141C]/85 backdrop-blur-xl border border-white/[0.08] rounded-3xl p-5 shadow-lg flex items-center gap-4">
         <AthleteAvatar
@@ -156,42 +150,28 @@ export function ProfileTab({
         </div>
       </section>
 
-      {/* Body Metrics & Goal Editor */}
+      {/* Body Metrics & Goal Editor (Strictly Gender-Filtered) */}
       <section className="bg-[#12141C]/85 backdrop-blur-xl border border-white/[0.08] rounded-3xl p-5 shadow-lg space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Sliders className="w-4 h-4" style={{ color: theme.primary }} />
             <h2 className="text-sm font-bold text-white">Personalize Routine</h2>
           </div>
-          <span className="text-[10px] text-white/50 font-mono-tabular">
-            Plan v{user.planVersion ?? 1}
-          </span>
-        </div>
-
-        {/* Physiological Gender Selector */}
-        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-[#090A0F] border border-white/[0.06]">
-          <button
-            type="button"
-            onClick={() => handleGenderSwitch('female')}
-            className={`min-h-[38px] rounded-xl text-xs font-semibold transition-all ${
-              gender === 'female'
-                ? 'bg-[#1A1D28] text-white border border-rose-500/40'
-                : 'text-white/55 hover:text-white'
-            }`}
-          >
-            Female Splits
-          </button>
-          <button
-            type="button"
-            onClick={() => handleGenderSwitch('male')}
-            className={`min-h-[38px] rounded-xl text-xs font-semibold transition-all ${
-              gender === 'male'
-                ? 'bg-[#1A1D28] text-white border border-orange-500/40'
-                : 'text-white/55 hover:text-white'
-            }`}
-          >
-            Male Splits
-          </button>
+          <div className="flex items-center gap-1.5">
+            <span
+              className="text-[10px] font-semibold px-2 py-0.5 rounded-lg"
+              style={{
+                backgroundColor: theme.softBg,
+                color: theme.secondary,
+                border: `1px solid ${theme.borderAccent}`,
+              }}
+            >
+              {user.gender === 'female' ? 'Female Protocol' : 'Male Protocol'}
+            </span>
+            <span className="text-[10px] text-white/50 font-mono-tabular">
+              v{user.planVersion ?? 1}
+            </span>
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-2.5">

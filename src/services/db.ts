@@ -520,8 +520,18 @@ function hydrateLegacyUser(u: UserProfile): { user: UserProfile; changed: boolea
     changed = true;
   }
 
-  // Auto-migrate existing saved splits so every training day has strictly 6 exercises
+  // Strictly enforce gender-to-goal consistency so female accounts only ever have female splits and male accounts only ever have male splits
+  const validGoalsForGender = next.gender === 'female' ? FEMALE_GOALS : MALE_GOALS;
+  let goalWasMismatched = false;
+  if (!validGoalsForGender.some((g) => g.title === next.goal)) {
+    next.goal = validGoalsForGender[0].title;
+    goalWasMismatched = true;
+    changed = true;
+  }
+
+  // Auto-migrate existing saved splits so every training day has strictly 6 exercises (or rebuild if goal/gender mismatched)
   const needsSixExerciseUpgrade =
+    goalWasMismatched ||
     !Array.isArray(next.split) ||
     next.split.length !== 7 ||
     next.split.some((day) => !day.isRestDay && (!Array.isArray(day.exercises) || day.exercises.length < 6));
@@ -538,7 +548,7 @@ function hydrateLegacyUser(u: UserProfile): { user: UserProfile; changed: boolea
       seed
     ).map((d) => ({
       ...d,
-      completedToday: prevDoneByDay.get(d.dayIndex) ?? false,
+      completedToday: goalWasMismatched ? false : (prevDoneByDay.get(d.dayIndex) ?? false),
     }));
     next.split = upgradedSplit;
     changed = true;
@@ -682,6 +692,11 @@ export const db = {
     const initSteps = 1200;
     const initSleep = input.gender === 'female' ? 8.5 : 8.0;
 
+    const allowedGoals = input.gender === 'female' ? FEMALE_GOALS : MALE_GOALS;
+    const safeGoal = allowedGoals.some((g) => g.title === input.goal)
+      ? input.goal
+      : allowedGoals[0].title;
+
     const newUser: UserProfile = {
       id: `athlete-${Date.now()}`,
       username: makeUsername(input.name),
@@ -690,7 +705,7 @@ export const db = {
       password: input.password,
       avatarUrl,
       gender: input.gender,
-      goal: input.goal,
+      goal: safeGoal,
       metrics: input.metrics,
       schedule: input.schedule,
       streakDays: 1,

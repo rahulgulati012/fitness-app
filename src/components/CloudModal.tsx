@@ -26,7 +26,7 @@ export function CloudModal({ isOpen, onClose, theme }: CloudModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm p-3"
+      className="fixed inset-0 z-[10000] flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm p-3"
       role="dialog"
       aria-modal="true"
       aria-labelledby="cloud-modal-title"

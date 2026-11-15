@@ -19,8 +19,11 @@ export function BottomNav({ activeTab, onSelectTab, theme }: BottomNavProps) {
   return (
     <nav
       aria-label="Primary navigation"
-      className="fixed bottom-4 left-3 right-3 z-50 max-w-[406px] mx-auto bg-[#12141C]/92 backdrop-blur-xl border border-white/[0.1] rounded-3xl px-1.5 py-1.5 shadow-2xl"
-      style={{ boxShadow: '0 14px 36px rgba(0, 0, 0, 0.65)' }}
+      className="fixed bottom-12 left-3 right-3 z-[9999] max-w-[406px] mx-auto bg-[#12141C]/92 backdrop-blur-xl border border-white/[0.1] rounded-3xl px-1.5 py-1.5 shadow-2xl"
+      style={{
+        bottom: 'calc(3rem + env(safe-area-inset-bottom))',
+        boxShadow: '0 14px 36px rgba(0, 0, 0, 0.65)',
+      }}
     >
       <div className="grid grid-cols-5 items-center gap-0.5">
         {NAV_ITEMS.map(({ key, label, Icon }) => {
