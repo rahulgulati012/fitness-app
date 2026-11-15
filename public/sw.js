@@ -1,11 +1,11 @@
-const CACHE_NAME = 'kinetix-pwa-v1';
+const CACHE_NAME = 'kinetix-pwa-v2';
 const CORE_SHELL = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icon.svg',
   '/pwa-192x192.png',
   '/pwa-512x512.png',
+  '/pwa-maskable-512x512.png',
   '/apple-touch-icon.png',
 ];
 
@@ -30,37 +30,25 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith('/api/')) return;
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
 
-  // Navigation requests: network-first with cached shell fallback
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
+  // Network-first strategy with cache fallback for full Chrome PWA installability
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        if (response && response.status === 200 && response.type === 'basic') {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          return response;
+        }
+        return response;
+      })
+      .catch(() =>
+        caches.match(request).then((cached) => {
+          if (cached) return cached;
+          if (request.mode === 'navigate') return caches.match('/index.html');
+          return Response.error();
         })
-        .catch(() => caches.match('/index.html'))
-    );
-    return;
-  }
-
-  // Static assets: stale-while-revalidate
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      const networkFetch = fetch(request)
-        .then((response) => {
-          if (response && response.status === 200) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || networkFetch;
-    })
+      )
   );
 });
 

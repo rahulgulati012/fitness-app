@@ -71,6 +71,8 @@ const blueprintSchema = {
           },
           exercises: {
             type: Type.ARRAY,
+            description:
+              "For training days (isRestDay: false), return STRICTLY 6 distinct, properly sequenced exercises (2 primary compounds, 2 secondary hypertrophy movements, 2 targeted isolation/finisher movements). For recovery days (isRestDay: true), return 1-2 gentle recovery activities.",
             items: {
               type: Type.OBJECT,
               properties: {
@@ -154,7 +156,7 @@ Profile:
 - Motivation Vibe: ${body.schedule?.vibe ?? "Confident & Indulging"}
 
 Rules:
-1. Return exactly 7 days in "split" ordered dayIndex 0 (Mon) through 6 (Sun) with dayLabel "Mon".."Sun". Include 6 structured days (5-6 training days + 1 active recovery day, with Sun as rest/recovery).
+1. Return exactly 7 days in "split" ordered dayIndex 0 (Mon) through 6 (Sun) with dayLabel "Mon".."Sun". Include 5 training days (isRestDay: false) + 2 active recovery days (Thu & Sun with isRestDay: true).
 2. Make the split unmistakably distinct for "${body.gender}" + "${body.goal}":
    - Female "Hourglass & Glute Sculpt": upper/lower glutes, side delts, TVA vacuum core (zero bulky obliques).
    - Female "Athletic & Toned": lower power, upper symmetry, metabolic conditioning.
@@ -162,7 +164,7 @@ Rules:
    - Male "V-Taper Aesthetic": clavicular upper chest shelf, wide lats, 3D side delts, tight waist.
    - Male "Hypertrophy & Mass": heavy compound barbell/machine tension and dense volume.
    - Male "Athletic Shred": explosive speed-strength paired with metabolic conditioning & core shred.
-3. Each training day needs 3-4 specific dynamic warmupDrills matching that day's target muscle, and 3-4 tailored exercises with realistic starter weights in kg, coaching cues, tempo (e.g., "3-1-1-0"), and restSeconds (60, 90, or 120).
+3. STRICT REQUIREMENT: Every training day (isRestDay: false) MUST include 3-4 specific dynamic warmupDrills matching that day's target muscle AND STRICTLY 6 distinct, properly sequenced exercises (2 primary compounds, 2 secondary hypertrophy movements, 2 targeted isolation/finisher movements) with realistic starter weights in kg, coaching cues, tempo (e.g., "3-1-1-0"), and restSeconds (60, 90, or 120).
 4. Active recovery days should have isRestDay: true, 3 mobility warmupDrills, and 1-2 gentle walk/core recovery items.
 5. Return exactly 20 short, high-impact quotes in "quotes", each addressing "${firstName}" naturally in the "${body.schedule?.vibe ?? "Confident & Indulging"}" tone.${avoidClause}`;
 

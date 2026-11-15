@@ -49,6 +49,31 @@ export default function App() {
     applyThemeCssVars(theme);
   }, [theme]);
 
+  useEffect(() => {
+    const cleanInjected = () => {
+      document
+        .querySelectorAll(
+          'iframe[src*="netlify" i], [class*="netlify" i], [id*="netlify" i], [data-netlify], a[href*="netlify.com"]'
+        )
+        .forEach((el) => {
+          if (el.id !== 'root') el.remove();
+        });
+      document.querySelectorAll('div, aside, footer, section, a, span').forEach((el) => {
+        if (el.id === 'root' || (el.closest('#root') && el.children.length > 3)) return;
+        const txt = (el.textContent ?? '').trim();
+        if (/powered\s+by\s+netlify/i.test(txt) && txt.length < 120) {
+          const target = el.closest('[style*="fixed"], [style*="sticky"], footer, aside') ?? el;
+          if (target.id !== 'root') target.remove();
+        }
+      });
+    };
+
+    cleanInjected();
+    const observer = new MutationObserver(() => cleanInjected());
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+
   const pushToast = (toast: Omit<ToastMessage, 'id'>) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     setToasts((prev) => [{ ...toast, id }, ...prev.slice(0, 2)]);

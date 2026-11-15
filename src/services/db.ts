@@ -520,6 +520,30 @@ function hydrateLegacyUser(u: UserProfile): { user: UserProfile; changed: boolea
     changed = true;
   }
 
+  // Auto-migrate existing saved splits so every training day has strictly 6 exercises
+  const needsSixExerciseUpgrade =
+    !Array.isArray(next.split) ||
+    next.split.length !== 7 ||
+    next.split.some((day) => !day.isRestDay && (!Array.isArray(day.exercises) || day.exercises.length < 6));
+
+  if (needsSixExerciseUpgrade) {
+    const prevDoneByDay = new Map<number, boolean>(
+      (next.split ?? []).map((d) => [d.dayIndex, Boolean(d.completedToday)])
+    );
+    const seed = Math.max(0, (next.planVersion ?? 1) - 1);
+    const upgradedSplit = buildVariedSplit(
+      next.gender,
+      next.goal,
+      next.metrics?.weightKg ?? 65,
+      seed
+    ).map((d) => ({
+      ...d,
+      completedToday: prevDoneByDay.get(d.dayIndex) ?? false,
+    }));
+    next.split = upgradedSplit;
+    changed = true;
+  }
+
   return { user: next, changed };
 }
 

@@ -139,6 +139,16 @@ const FEMALE_HOURGLASS_SPLIT: DayBlueprint[] = [
         ex('Cable Glute Kickback (30° Outward)', 'Upper Glute Shelf', 'Kick slightly diagonal to align with glute max fibers.', '2-1-1-1', 60, 3, 15, 12.5),
         ex('Seated Hip Abduction (Lean Forward)', 'Glute Medius', 'Hold peak stretch outward for 1s every single rep.', '2-1-2-0', 60, 4, 18, 45),
       ],
+      [
+        ex('Reverse Deficit Dumbbell Lunge', 'Glute Stretch & Quads', 'Step off 2-inch plate; drive cleanly through front heel.', '3-1-1-0', 75, 3, 10, 10),
+        ex('Wide-Stance Smith Split Squat', 'Glutes & Inner Thighs', 'Long stride with slight forward torso lean.', '3-1-1-0', 75, 3, 10, 35),
+        ex('Heel-Elevated Sumo Goblet Squat', 'Lower Glutes & Adductors', 'Sink hips straight between knees with proud chest.', '3-1-1-0', 75, 3, 12, 18),
+      ],
+      [
+        ex('Seated Calf Raise + Ankle Pump', 'Calves & Symmetry', 'Full 2s stretch at bottom; crisp lockout at top.', '2-2-1-1', 45, 3, 15, 25),
+        ex('Cable Side-Lying Hip Abduction', 'Glute Medius Cap', 'Keep top hip stacked forward without rolling back.', '2-1-1-1', 45, 3, 16, 7.5),
+        ex('Supine TVA Stomach Vacuum Hold', 'Deep Waist Cincher', 'Full exhale drawing navel to spine without oblique strain.', '20s Hold', 45, 3, 1, 0),
+      ],
     ],
   },
   {
@@ -195,6 +205,16 @@ const FEMALE_HOURGLASS_SPLIT: DayBlueprint[] = [
         ex('Hollow-Body Breath Hold', 'Deep Core Cincher', 'Exhale ribs downward; maintain tight flat waist.', '30s Hold', 60, 3, 1, 0),
         ex('Quadruped Stomach Vacuum', 'TVA Waist Control', 'Draw navel toward spine for 20s isometric holds.', '20s Hold', 45, 4, 1, 0),
       ],
+      [
+        ex('Behind-the-Back Cable Lateral Raise', 'Side Delts', 'Sweep outward smoothly to sharpen shoulder-to-waist ratio.', '2-1-2-0', 60, 3, 15, 5),
+        ex('Dumbbell Lateral Raise (Seated)', 'Medial Delts', 'Pause lightly at shoulder height without shrugging.', '2-1-1-1', 60, 3, 15, 6),
+        ex('Straight-Arm Cable Pulldown', 'Outer Lats & Posture', 'Sweep bar to thighs keeping ribcage tall.', '2-1-1-1', 60, 3, 14, 20),
+      ],
+      [
+        ex('Rope Tricep Pushdown (High Rep)', 'Toned Triceps', 'Pin elbows beside ribs; spread rope cleanly at bottom.', '2-1-1-1', 45, 3, 15, 15),
+        ex('Incline Dumbbell Bicep Curl', 'Sculpted Arms', 'Full stretch behind torso; crisp controlled curl.', '2-1-1-0', 45, 3, 14, 7),
+        ex('Overhead Cable Tricep Extension', 'Tricep Long Head', 'Deep stretch overhead to refine upper-arm line.', '2-1-1-0', 45, 3, 14, 15),
+      ],
     ],
   },
   {
@@ -250,6 +270,16 @@ const FEMALE_HOURGLASS_SPLIT: DayBlueprint[] = [
         ex('Lying Hamstring Curl', 'Hamstrings', 'Glue hips flat into bench; 1s squeeze at peak flexion.', '3-1-1-0', 60, 3, 12, 25),
         ex('Seated Leg Curl', 'Hamstrings', 'Drive heels fast; control return for 3 full seconds.', '3-1-1-0', 60, 3, 12, 30),
         ex('Swiss Ball Hamstring Curl', 'Posterior Chain', 'Keep hips bridged high throughout every curl.', '2-1-1-0', 60, 3, 15, 0),
+      ],
+      [
+        ex('Weighted Dumbbell Frog Pump', 'Glute Pump & Tie-In', 'Soles together, knees wide, pause 1s at peak contraction.', '1-1-1-0', 45, 3, 22, 16),
+        ex('Hip Adductor Machine (Controlled)', 'Inner Thigh Sculpt', 'Smooth 2s open stretch; strong squeeze inward.', '2-1-1-1', 60, 3, 15, 35),
+        ex('Cable Standing Glute Kickback', 'Upper Glute Max', 'Keep standing leg soft and pelvis square.', '2-1-1-1', 45, 3, 15, 10),
+      ],
+      [
+        ex('Leg Extension (Controlled Finisher)', 'Quad Line', 'Light-moderate weight for teardrop quad definition.', '2-1-1-1', 45, 3, 15, 30),
+        ex('Standing Single-Leg Calf Raise', 'Lower-Leg Balance', 'Full 2s stretch at bottom step.', '2-2-1-1', 45, 3, 15, 10),
+        ex('Pilates Leg Lowering + Core Brace', 'Deep Lower Abs', 'Lower legs smoothly without arching lower back.', '3-1-1-0', 45, 3, 14, 0),
       ],
     ],
   },
@@ -353,6 +383,16 @@ const FEMALE_HOURGLASS_SPLIT: DayBlueprint[] = [
         ex('Incline Dumbbell Y-Raise', 'Lower Traps & Rear Delts', 'Chest on 30° bench, lift thumbs up into Y shape.', '2-1-1-1', 60, 3, 14, 4),
         ex('Rope Face Pull (High Pulley)', 'Rear Delts & Posture', 'Spread rope wide beside ears and pause 1s.', '2-1-1-1', 60, 3, 15, 15),
       ],
+      [
+        ex('Single-Leg Hip Thrust (Bodyweight/DB)', 'Glute Symmetry', 'Lock level pelvis; 1s squeeze at top.', '2-1-1-1', 60, 3, 12, 12.5),
+        ex('B-Stance Glute-Biased RDL', 'Glute-Hamstring Tie-In', 'Keep 85% tension on front heel.', '3-1-1-0', 75, 3, 12, 14),
+        ex('Curtsy Lunge (Slow Tempo)', 'Glute Medius & Quads', 'Control descent 3s keeping hips square forward.', '3-1-1-0', 60, 3, 12, 10),
+      ],
+      [
+        ex('Machine Seated Hip Abduction', 'Glute Medius Burnout', '15 upright + 15 forward-lean pulses.', '1-1-1-0', 45, 3, 20, 45),
+        ex('Seated Dumbbell Arnold Press', 'Shoulder Cap Finisher', 'Smooth rotation keeping traps relaxed.', '2-1-1-0', 60, 3, 12, 8),
+        ex('Dead Bug Transverse Brace', 'TVA Waistline', 'Exhale ribs downward; protect slim waist line.', '3-1-1-0', 45, 3, 14, 0),
+      ],
     ],
   },
   {
@@ -408,6 +448,16 @@ const FEMALE_HOURGLASS_SPLIT: DayBlueprint[] = [
         ex('Pilates Leg Lowering + Vacuum', 'Deep Lower Abs', 'Lower legs only as far as lumbar spine stays pinned.', '3-1-1-0', 60, 3, 14, 0),
         ex('Pallof Anti-Rotation Press', 'Core Tightness', 'Press cable straight out resisting rotation; zero oblique bulk.', '2-2-2-0', 45, 3, 12, 10),
         ex('Dead Bug Slow March', 'Transverse Abdominis', 'Exhale completely on each leg reach.', '3-1-1-0', 45, 3, 14, 0),
+      ],
+      [
+        ex('Wide-Grip Assisted Pull-Up / Pulldown', 'Upper Back Taper', 'Draw elbows wide and down toward hips.', '3-1-1-0', 60, 3, 12, 32.5),
+        ex('Incline Dumbbell Chest Press', 'Upper Chest Posture', 'Moderate weight for clean clavicle-line support.', '3-1-1-0', 60, 3, 12, 10),
+        ex('Chest-Supported Row', 'Upper Back & Posture', 'Squeeze shoulder blades cleanly for 1s.', '2-1-1-1', 60, 3, 14, 25),
+      ],
+      [
+        ex('Cable Glute Pull-Through (Finisher)', 'Glute Squeeze', 'Full hip hinge back and tall upright squeeze.', '2-1-1-1', 45, 3, 18, 22.5),
+        ex('Standing Calf & Tibialis Raise', 'Ankle & Leg Aesthetics', 'Slow controlled reps with 1s top pause.', '2-1-1-1', 45, 3, 16, 20),
+        ex('Banded Clamshell + Abduction Burnout', 'Glute Medius', 'Continuous high tension until glute shelf burns.', '1-1-1-0', 45, 3, 25, 0),
       ],
     ],
   },
@@ -509,6 +559,16 @@ const FEMALE_ATHLETIC_TONED_SPLIT: DayBlueprint[] = [
         ex('Hanging Knee Raise', 'Lower Abs & Grip', 'Curl pelvis up cleanly with zero swinging.', '2-1-2-0', 60, 3, 12, 0),
         ex('Ab-Wheel / Stability Ball Rollout', 'Anti-Extension Core', 'Reach forward keeping ribs tucked tight.', '3-1-1-0', 60, 3, 12, 0),
       ],
+      [
+        ex('Leg Press (Shoulder-Width)', 'Quads & Glutes', 'Control lowering until calves touch hamstrings.', '3-1-1-0', 75, 3, 12, 85),
+        ex('Lying Leg Curl', 'Hamstrings', 'Keep hips pinned down and curl heels cleanly.', '3-1-1-0', 60, 3, 12, 25),
+        ex('Seated Hip Abduction', 'Glute Medius', 'Pause 1s outward on each repetition.', '2-1-1-1', 45, 3, 16, 40),
+      ],
+      [
+        ex('Standing Single-Leg Calf Raise', 'Calves & Ankle Power', 'Full bottom stretch, crisp athletic bounce-free drive.', '2-2-1-1', 45, 3, 15, 10),
+        ex('Sled Push / Incline Treadmill Walk', 'Athletic Conditioning', '6–8% incline brisk finish to elevate output.', '10 Mins', 60, 1, 10, 0),
+        ex('Farmer Dumbbell Walk', 'Grip & Core Stability', 'Walk tall keeping shoulders packed down.', '30s Walk', 45, 3, 1, 14),
+      ],
     ],
   },
   {
@@ -565,6 +625,16 @@ const FEMALE_ATHLETIC_TONED_SPLIT: DayBlueprint[] = [
         ex('Overhead Cable Tricep Extension', 'Triceps', 'Deep stretch behind head; smooth lockout.', '3-1-1-0', 60, 3, 12, 15),
         ex('Alternating Dumbbell Bicep Curl', 'Biceps', 'Control 2s descent on every repetition.', '2-1-2-0', 60, 3, 12, 8),
       ],
+      [
+        ex('Single-Arm Landmine Press', 'Shoulders & Core', 'Press smoothly upward keeping ribcage stacked.', '2-1-1-0', 60, 3, 12, 15),
+        ex('Machine Pec-Deck Fly', 'Chest & Posture', 'Control stretch without rolling shoulders forward.', '2-1-1-1', 60, 3, 14, 22.5),
+        ex('Straight-Arm Cable Pulldown', 'Lats & Serratus', 'Keep arms long and sweep down to thighs.', '2-1-1-1', 60, 3, 14, 20),
+      ],
+      [
+        ex('Pallof Anti-Rotation Press', 'Athletic Core', 'Press cable straight out resisting rotation.', '2-2-2-0', 45, 3, 12, 12.5),
+        ex('Dead Bug Extended Hold', 'Core Stability', 'Press lumbar spine flat into mat.', '2-1-1-0', 45, 3, 14, 0),
+        ex('Hollow-Body Hold', 'Deep Core', 'Hold clean banana shape without neck strain.', '30s Hold', 45, 3, 1, 0),
+      ],
     ],
   },
   {
@@ -620,6 +690,16 @@ const FEMALE_ATHLETIC_TONED_SPLIT: DayBlueprint[] = [
         ex('Hollow-Body Rock / Hold', 'Core Definition', 'Keep lower spine pressed firmly into mat.', '30s Hold', 45, 3, 1, 0),
         ex('Cable Woodchop (Controlled)', 'Athletic Core', 'Rotate from thoracic spine keeping hips quiet.', '2-1-1-0', 45, 3, 12, 12.5),
         ex('Reverse Crunch (Slow Lower)', 'Lower Abs', 'Curl hips off floor without momentum.', '3-1-1-0', 45, 3, 15, 0),
+      ],
+      [
+        ex('Lateral Med-Ball / Cable Slam', 'Athletic Power', 'Drive slam cleanly using full core brace.', 'Explosive', 45, 3, 12, 8),
+        ex('Goblet Jump Squat (Soft Landing)', 'Conditioning Power', 'Light load; land silently in quarter-squat.', 'Athletic', 60, 3, 10, 8),
+        ex('Step-Up Knee Drive', 'Conditioning & Glutes', 'Fast drive onto box; controlled step down.', 'Athletic', 45, 3, 14, 0),
+      ],
+      [
+        ex('Mountain Climber Tempo', 'Metabolic Core', 'Drive knees briskly keeping shoulders over wrists.', '30s Work', 45, 3, 1, 0),
+        ex('Plank Up-Downs', 'Shoulders & Core', 'Minimal hip sway alternating forearm to palm.', 'Controlled', 45, 3, 12, 0),
+        ex('Dead Bug Breath Finisher', 'Core Recovery', 'Slow controlled exhales locking ribs down.', '3-1-1-0', 45, 3, 12, 0),
       ],
     ],
   },
@@ -713,6 +793,21 @@ const FEMALE_ATHLETIC_TONED_SPLIT: DayBlueprint[] = [
         ex('Nordic / Eccentric Hamstring Lower', 'Hamstring Armor', 'Control forward descent as slow as possible.', '4-0-1-0', 60, 3, 8, 0),
         ex('Glute-Ham Raise / Back Extension', 'Posterior Chain', 'Squeeze glutes at top without over-arching back.', '2-1-1-1', 60, 3, 15, 10),
       ],
+      [
+        ex('Barbell Hip Thrust', 'Glute Max', 'Drive through heels cleanly with tucked chin.', '2-1-1-1', 90, 4, 10, 65),
+        ex('Cable Glute Pull-Through', 'Glutes & Hinge', 'Deep hip hinge; stand tall and squeeze.', '2-1-1-1', 60, 3, 15, 22.5),
+        ex('45° Back Extension', 'Upper Glutes', 'Round upper back subtly and squeeze glutes.', '2-1-1-1', 60, 3, 15, 10),
+      ],
+      [
+        ex('Seated Hip Abduction', 'Glute Medius', 'Hold peak 1s squeeze outward every rep.', '2-1-2-0', 45, 3, 18, 42.5),
+        ex('Cable Glute Kickback', 'Glute Shelf', 'Smooth controlled leg sweep back.', '2-1-1-1', 45, 3, 15, 10),
+        ex('Banded Frog Pumps', 'Glute Finisher', 'High-rep burn keeping soles pressed together.', '1-1-1-0', 45, 3, 25, 0),
+      ],
+      [
+        ex('Standing Calf Raise', 'Calves', '2s bottom stretch; explosive calf raise.', '2-2-1-1', 45, 3, 15, 30),
+        ex('Hanging Knee Raise', 'Lower Abs', 'Controlled pelvic tilt without swinging.', '2-1-2-0', 45, 3, 12, 0),
+        ex('Forearm Plank (45s)', 'Core Endurance', 'Brace glutes and abs hard together.', '45s Hold', 45, 3, 1, 0),
+      ],
     ],
   },
   {
@@ -763,6 +858,21 @@ const FEMALE_ATHLETIC_TONED_SPLIT: DayBlueprint[] = [
         ex('Pilates-Style Leg Lowering', 'Lower Abs', 'Anchor lower spine flat into mat on every rep.', '3-1-1-0', 60, 3, 14, 0),
         ex('Side Plank Hip Dip (Light)', 'Core Stability', 'Stack shoulders cleanly over elbow.', '2-1-1-0', 45, 3, 12, 0),
         ex('V-Up / Tuck Crunch', 'Upper & Lower Abs', 'Reach smoothly toward shins with controlled descent.', '2-1-2-0', 45, 3, 15, 0),
+      ],
+      [
+        ex('Dumbbell Push Press', 'Shoulders & Power', 'Short crisp knee dip driving weights cleanly overhead.', 'Explosive', 60, 3, 10, 10),
+        ex('Cable Lateral Raise', 'Side Delts', 'Sweep smoothly out in scapular plane.', '2-1-1-0', 45, 3, 15, 5),
+        ex('Face Pulls (Rope)', 'Rear Delts & Posture', 'Spread rope beside ears for strong shoulder posture.', '2-1-1-1', 45, 3, 15, 15),
+      ],
+      [
+        ex('Alternating Reverse Lunge', 'Legs & Balance', 'Smooth step back keeping knee softly cushioned.', '2-0-1-0', 60, 3, 12, 10),
+        ex('Dumbbell Sumo Squat', 'Inner Thighs & Glutes', 'Wide stance; knees track over toes.', '3-1-1-0', 60, 3, 14, 18),
+        ex('Kettlebell Swing', 'Posterior Power', 'Snap hips crisply into tall standing posture.', 'Explosive', 60, 3, 18, 16),
+      ],
+      [
+        ex('Incline Power Walk / Rowing Finisher', 'Metabolic Conditioning', '8 mins crisp steady output to finish session.', '8 Mins', 60, 1, 8, 0),
+        ex('Hammer Curl + Overhead Rope Extension', 'Toned Arms', 'Controlled tempo superset without swinging.', '2-1-1-0', 45, 3, 14, 8),
+        ex('Dead Bug + Vacuum Breath', 'Core Cincher', 'Lock ribs downward and breathe deeply.', '3-1-1-0', 45, 3, 12, 0),
       ],
     ],
   },
@@ -859,6 +969,21 @@ const FEMALE_LEAN_PETITE_SPLIT: DayBlueprint[] = [
         ex('Stair Stepper Tempo Climb', 'Glute & Cardio Burn', 'Upright posture without leaning heavily on rails.', '10 Mins', 60, 1, 10, 0),
         ex('Shadowboxing + Step Interval', 'Metabolic Burn', '60s crisp punches / 30s march recovery.', '60s Work', 45, 4, 1, 0),
       ],
+      [
+        ex('Dumbbell Romanian Deadlift', 'Hamstrings & Glutes', 'Soft knees; glide dumbbells smoothly down shins.', '3-1-1-0', 60, 3, 14, 12),
+        ex('Lying Leg Curl', 'Hamstrings', 'Control 3s lowering phase on every rep.', '3-1-1-0', 45, 3, 15, 22.5),
+        ex('Seated Leg Extension', 'Quad Definition', 'Light-moderate load with crisp 1s top pause.', '2-1-1-1', 45, 3, 15, 25),
+      ],
+      [
+        ex('Seated Hip Abduction', 'Glute Medius', 'Continuous controlled outward pulse.', '1-1-1-0', 45, 3, 20, 40),
+        ex('Hip Adductor Squeeze', 'Inner Thighs', 'Smooth full range without momentum.', '2-1-1-1', 45, 3, 16, 30),
+        ex('Walking Lunge (Light)', 'Leg Conditioning', '20 smooth continuous steps.', '2-0-1-0', 45, 3, 16, 8),
+      ],
+      [
+        ex('Standing Calf Raise', 'Calves', 'Full bottom stretch; crisp top pause.', '2-2-1-1', 45, 3, 18, 20),
+        ex('Supine Leg Lowering', 'Deep Core', 'Keep lower back glued flat to mat.', '3-1-1-0', 45, 3, 14, 0),
+        ex('Dead Bug Stomach Vacuum', 'TVA Cincher', 'Full exhale keeping waist narrow.', '3-1-2-0', 45, 3, 12, 0),
+      ],
     ],
   },
   {
@@ -910,6 +1035,21 @@ const FEMALE_LEAN_PETITE_SPLIT: DayBlueprint[] = [
         ex('Rope Pushdown + Hammer Curl', 'Arms Superset', 'High-rep burn with clean full extension.', '2-1-1-0', 45, 3, 16, 12.5),
         ex('Bench Dip + Alternating Curl', 'Triceps & Biceps', 'Keep back close to bench edge on dips.', '2-1-1-0', 45, 3, 15, 0),
       ],
+      [
+        ex('Incline Push-Up / Chest Press', 'Upper Chest Posture', '3s slow lowering; open chest smoothly.', '3-1-1-0', 45, 3, 14, 8),
+        ex('Single-Arm Dumbbell Row', 'Mid-Back Sculpt', 'Keep shoulders square and pull elbow to hip.', '2-1-1-0', 45, 3, 14, 10),
+        ex('Straight-Arm Cable Pulldown', 'Lats & Posture', 'Sweep bar to thighs keeping ribs tucked.', '2-1-1-1', 45, 3, 15, 17.5),
+      ],
+      [
+        ex('Incline Dumbbell Rear Delt Raise', 'Posterior Delts', 'Sweep arms wide at 45° angle.', '2-1-1-1', 45, 3, 16, 4),
+        ex('Pec-Deck Chest Fly', 'Chest & Posture', 'Controlled arc with 1s squeeze.', '2-1-1-1', 45, 3, 15, 20),
+        ex('Overhead Cable Tricep Extension', 'Triceps', 'Smooth stretch overhead without flaring ribs.', '2-1-1-0', 45, 3, 15, 12.5),
+      ],
+      [
+        ex('Forearm Plank + Knee Taps', 'Core Cincher', 'Keep hips level while tapping alternating knees.', 'Controlled', 45, 3, 16, 0),
+        ex('Hollow-Body Breath Hold', 'Transverse Abdominis', 'Draw ribs down cleanly with calm breaths.', '25s Hold', 45, 3, 1, 0),
+        ex('Pallof Press Hold', 'Core Stability', 'Resist cable twist for crisp posture.', '2-2-2-0', 45, 3, 12, 10),
+      ],
     ],
   },
   {
@@ -960,6 +1100,21 @@ const FEMALE_LEAN_PETITE_SPLIT: DayBlueprint[] = [
         ex('Incline Speed Walk (Intervals)', 'Metabolic Finish', '1 min brisk / 1 min moderate for 12 mins.', '12 Mins', 60, 1, 12, 0),
         ex('Rowing Machine Steady Burn', 'Full-Body Cardio', 'Smooth 24 strokes/min rhythmic pull.', '10 Mins', 60, 1, 10, 0),
         ex('Brisk Step Banking Circuit', 'NEAT Boost', 'Add 1,500 crisp steps inside gym or outdoors.', '15 Mins', 60, 1, 15, 0),
+      ],
+      [
+        ex('Mountain Climbers (Crisp Tempo)', 'Cardio Core', 'Keep shoulders stacked over hands.', '30s Work', 45, 3, 1, 0),
+        ex('Reverse Crunch (Slow Eccentric)', 'Lower Abs', 'Lift tailbone cleanly off mat.', '3-1-1-0', 45, 3, 15, 0),
+        ex('Bird-Dog Anti-Rotation Hold', 'Deep Core', 'Pause 2s extended each side.', '2-2-1-0', 45, 3, 12, 0),
+      ],
+      [
+        ex('Single-Arm Dumbbell Farmer Carry', 'Posture & Core', 'Walk briskly 30m keeping torso upright.', '30s Walk', 45, 3, 1, 12),
+        ex('Bodyweight Squat + Calf Raise', 'Lower Tone', 'Continuous flow keeping glutes engaged.', '2-0-1-0', 45, 3, 20, 0),
+        ex('Band Pull-Apart Walk', 'Upper Posture', 'Walk 20 steps while pulsing band apart.', '20 Steps', 45, 3, 20, 0),
+      ],
+      [
+        ex('Supine Stomach Vacuum Series', 'Waistline Cincher', 'Full exhale, draw navel inward, hold 20s.', '20s Hold', 45, 4, 1, 0),
+        ex('Glute Bridge March (High Rep)', 'Glutes & Core', 'Keep hips pinned high while alternating legs.', 'Controlled', 45, 3, 20, 0),
+        ex('Cat-Cow Mobility Finish', 'Spine & Breath', 'Reset nervous system before cooldown.', '8 Breaths', 45, 2, 8, 0),
       ],
     ],
   },
@@ -1053,6 +1208,21 @@ const FEMALE_LEAN_PETITE_SPLIT: DayBlueprint[] = [
         ex('45° Back Extension (Glute Focus)', 'Upper Glutes', 'Tuck chin; squeeze glutes to parallel.', '2-1-1-1', 45, 3, 16, 5),
         ex('Cable Glute Kickback', 'Glute Shelf', 'Controlled leg sweep back with square hips.', '2-1-1-1', 45, 3, 16, 10),
       ],
+      [
+        ex('Barbell / Dumbbell Hip Thrust', 'Glute Max', 'Drive through heels; 1s peak pause.', '2-1-1-1', 60, 4, 15, 45),
+        ex('Elevated Sumo Squat', 'Glutes & Adductors', 'Sink deeply between blocks with proud chest.', '3-1-1-0', 60, 3, 15, 16),
+        ex('Step-Up (Low Box Tempo)', 'Glutes & Balance', 'Control 3s lowering phase down.', '3-1-1-0', 45, 3, 14, 8),
+      ],
+      [
+        ex('Seated Leg Curl', 'Hamstrings', 'Smooth 3s return to full knee extension.', '3-1-1-0', 45, 3, 15, 25),
+        ex('Banded Frog Pumps', 'Glute Pump', 'Soles together; high-rep squeeze.', '1-1-1-0', 45, 3, 25, 0),
+        ex('Side-Lying Banded Clamshell', 'Glute Medius', 'Keep hips stacked vertically.', '1-1-1-0', 45, 3, 20, 0),
+      ],
+      [
+        ex('Standing Calf Raise', 'Calves & Ankle Tone', 'Full stretch at bottom step.', '2-2-1-1', 45, 3, 18, 20),
+        ex('Dead Bug Slow March', 'Deep Core', 'Glue lower spine flat to floor.', '3-1-1-0', 45, 3, 14, 0),
+        ex('Incline Brisk Walk (8 Mins)', 'Step & Calorie Burn', 'Upright posture; swing arms briskly.', '8 Mins', 60, 1, 8, 0),
+      ],
     ],
   },
   {
@@ -1103,6 +1273,21 @@ const FEMALE_LEAN_PETITE_SPLIT: DayBlueprint[] = [
         ex('Slow Bicycle / Toe-Tap Crunch', 'Deep Core', 'Zero neck pulling; focus on rib-to-pelvis connection.', '2-1-2-0', 45, 3, 18, 0),
         ex('Hollow Hold + Leg Flutter', 'Lower Abs', 'Small crisp kicks keeping lumbar flat.', '25s Work', 45, 3, 1, 0),
         ex('Plank Saw (Controlled)', 'Full Core', 'Shift body 2 inches forward/back cleanly.', 'Controlled', 45, 3, 14, 0),
+      ],
+      [
+        ex('Seated Dumbbell Shoulder Press', 'Shoulders', 'Control elbows slightly forward; smooth press.', '2-1-1-0', 45, 3, 14, 8),
+        ex('Cable Lateral Raise', 'Side Delts', 'Continuous tension sweeping outward.', '2-1-1-0', 45, 3, 16, 4),
+        ex('Rope Face Pulls', 'Rear Delts & Posture', 'Pull rope beside ears with 1s squeeze.', '2-1-1-1', 45, 3, 16, 12.5),
+      ],
+      [
+        ex('Dumbbell Hammer Curl', 'Arms', 'Keep elbows pinned quietly beside ribs.', '2-1-1-0', 45, 3, 14, 6),
+        ex('Rope Tricep Pushdown', 'Triceps', 'Spread rope apart smoothly at full extension.', '2-1-1-1', 45, 3, 15, 12.5),
+        ex('Overhead Dumbbell Tricep Extension', 'Tricep Long Head', 'Controlled stretch behind head.', '2-1-1-0', 45, 3, 14, 10),
+      ],
+      [
+        ex('Kettlebell Goblet Squat (Burnout)', 'Full-Body Flush', 'High-rep clean depth keeping chest tall.', '2-0-1-0', 45, 3, 16, 12),
+        ex('Shadowboxing Tempo Intervals', 'Calorie Torch', '45s snappy punches / 15s reset.', '45s Work', 45, 3, 1, 0),
+        ex('Stair Climber / Incline Finisher', 'Step & Calorie Floor', '10 mins smooth pace to top off step count.', '10 Mins', 60, 1, 10, 0),
       ],
     ],
   },
@@ -1211,6 +1396,16 @@ const MALE_VTAPER_SPLIT: DayBlueprint[] = [
         ex('Incline Dumbbell Fly (Partial Stretch)', 'Clavicular Chest', 'Deep controlled stretch without dropping shoulders forward.', '3-1-1-0', 60, 3, 12, 14),
         ex('Pec-Deck Chest Fly (High Seat)', 'Inner & Upper Chest', 'Lower seat slightly to bias upper pec fibers.', '2-1-1-1', 60, 3, 14, 45),
       ],
+      [
+        ex('Chest-Supported Upper Back Row', 'Mid-Back & Rear Delts', 'Pull elbows high at 45° to frame upper-back shelf.', '2-1-1-1', 75, 3, 12, 50),
+        ex('Wide-Grip Seated Cable Row', 'Rhomboids & Rear Delts', 'Keep chest tall and squeeze shoulder blades cleanly.', '2-1-1-1', 75, 3, 12, 55),
+        ex('Meadows Single-Arm Landmine Row', 'Outer Lats', 'Hinge firmly and drive elbow past ribcage.', '2-1-1-0', 75, 3, 10, 30),
+      ],
+      [
+        ex('Cable Face Pull (External Rotate)', 'Rear Delts & Posture', 'Pull rope beside ears to lock shoulder girdle back.', '2-1-1-1', 45, 3, 15, 20),
+        ex('Weighted Hanging Knee Raise', 'Lower Abs & Tight Waist', 'Curl pelvis up cleanly keeping waist slim.', '2-1-2-0', 45, 3, 12, 0),
+        ex('Supine Stomach Vacuum Holds', 'TVA Waistline Control', 'Full exhale drawing navel inward without oblique bulk.', '20s Hold', 45, 4, 1, 0),
+      ],
     ],
   },
   {
@@ -1267,6 +1462,16 @@ const MALE_VTAPER_SPLIT: DayBlueprint[] = [
         ex('EZ-Bar Preacher Curl + Overhead Rope', 'Arm Thickness', 'Deep stretch at bottom of both movements.', '3-1-1-0', 60, 3, 12, 30),
         ex('Cable Bayesian Curl + Single-Arm Pushdown', 'Biceps Long Head & Triceps', 'Step forward of cable stack for loaded bicep stretch.', '2-1-2-0', 60, 3, 12, 12.5),
       ],
+      [
+        ex('Arnold Dumbbell Press (Controlled)', 'Front & Side Delts', 'Smooth rotation keeping traps depressed.', '2-1-1-0', 75, 3, 12, 18),
+        ex('Wide-Grip Upright Cable Row', 'Side & Rear Delts', 'Pull bar cleanly to sternum height leading with elbows.', '2-1-1-0', 60, 3, 14, 27.5),
+        ex('Seated Incline Dumbbell Y-Raise', 'Lower Traps & Rear Cap', 'Lift thumbs cleanly into Y shape without neck tension.', '2-1-1-1', 60, 3, 14, 7),
+      ],
+      [
+        ex('Hammer Dumbbell Curl (Finisher)', 'Brachialis & Forearms', 'Keep elbows locked beside ribs; zero body sway.', '2-1-2-0', 45, 3, 14, 16),
+        ex('Cross-Body Cable Tricep Extension', 'Lateral & Long Head', 'Extend arm cleanly down and slightly behind hip.', '2-1-1-1', 45, 3, 15, 12.5),
+        ex('Cable Face Pulls (High Pulley)', 'Posterior Delts', 'Pinch rear shoulder heads cleanly for 1s.', '2-1-1-1', 45, 3, 15, 22.5),
+      ],
     ],
   },
   {
@@ -1322,6 +1527,16 @@ const MALE_VTAPER_SPLIT: DayBlueprint[] = [
         ex('Hanging Leg Raise (Controlled)', 'Lower Abs (Tight Waist)', 'Curl pelvis up toward ribs; zero oblique thickening.', '2-1-2-0', 60, 3, 12, 0),
         ex('Cable Crunch + Vacuum Finisher', 'Abdominal Wall', 'Flex ribs to pelvis without hip hinging.', '2-1-2-0', 60, 3, 15, 35),
         ex('Decline Reverse Crunch', 'Lower Abs', 'Slow 3s lowering back onto bench.', '3-1-1-0', 60, 3, 14, 0),
+      ],
+      [
+        ex('Bulgarian Split Squat', 'Quads & Glute Sweep', 'Deep controlled descent; drive smoothly upward.', '3-1-1-0', 90, 3, 10, 18),
+        ex('Walking Dumbbell Lunge', 'Quad & Glute Separation', 'Crisp unbroken steps keeping torso stacked tall.', '2-0-1-0', 75, 3, 12, 16),
+        ex('Sissy / Heel-Elevated Goblet Squat', 'Teardrop Quad Sweep', 'Drive knees forward cleanly for peak quad stretch.', '3-1-1-0', 75, 3, 12, 24),
+      ],
+      [
+        ex('Leg Extension (Peak Hold Finisher)', 'Rectus Femoris', 'Hold 1s hard contraction at top of every rep.', '2-1-1-1', 45, 3, 15, 55),
+        ex('Hip Adductor Machine', 'Inner Thigh Sweep', 'Control open stretch cleanly; squeeze inward.', '2-1-1-1', 45, 3, 15, 50),
+        ex('Seated Tibialis & Calf Raise', 'Lower-Leg Proportion', 'Full dorsiflexion and plantarflexion range.', '2-1-1-1', 45, 3, 16, 40),
       ],
     ],
   },
@@ -1420,6 +1635,16 @@ const MALE_VTAPER_SPLIT: DayBlueprint[] = [
         ex('Seated Bent-Over Rear Delt Fly', 'Posterior Delts', 'Chest on thighs; sweep pinkies outward wide.', '2-1-1-1', 60, 3, 15, 10),
         ex('High-Pulley Rear Delt Cross-Pull', 'Rear Delts', 'Keep arms straight and pull diagonally down.', '2-1-1-1', 60, 3, 15, 7.5),
       ],
+      [
+        ex('Straight-Arm Cable Pulldown', 'Outer Lat Flare', 'Sweep bar smoothly to thighs keeping torso tall.', '2-1-1-1', 60, 3, 14, 27.5),
+        ex('Dumbbell Pullover (Bench)', 'Lats & Ribcage Expansion', 'Deep overhead stretch with soft elbow bend.', '3-1-1-0', 60, 3, 12, 24),
+        ex('Single-Arm Kneeling Lat Pulldown', 'Lower Lat Sweep', 'Drive elbow cleanly down to hip line.', '2-1-2-0', 60, 3, 12, 25),
+      ],
+      [
+        ex('Alternating Dumbbell Curl', 'Biceps', 'Supinate cleanly while keeping upper arm anchored.', '2-1-2-0', 45, 3, 12, 16),
+        ex('Cable Hammer Rope Curl', 'Brachialis & Forearms', 'Pull rope evenly toward shoulders without swaying.', '2-1-1-1', 45, 3, 14, 25),
+        ex('Dumbbell Shrug (Strict 2s Pause)', 'Upper Back Frame', 'Pause cleanly at top without rolling shoulders.', '2-2-1-0', 45, 3, 14, 28),
+      ],
     ],
   },
   {
@@ -1475,6 +1700,16 @@ const MALE_VTAPER_SPLIT: DayBlueprint[] = [
         ex('Cable Crunch + Vacuum Set', 'Abdominal Wall', 'Flex thoracic spine downward without hip hinging.', '2-1-2-0', 60, 3, 15, 35),
         ex('Ab-Wheel Rollout', 'Core Bracing', 'Zero lower-back sag; keep ribs tucked.', '3-1-1-0', 60, 3, 12, 0),
         ex('Hanging Straight-Leg Raise', 'Lower Abs', 'Control lowering phase for 2s to avoid swing.', '2-1-2-0', 60, 3, 10, 0),
+      ],
+      [
+        ex('Low-to-High Cable Fly (Upper Shelf)', 'Clavicular Pectorals', 'Sweep handles upward to collarbone height.', '2-1-1-1', 60, 3, 14, 15),
+        ex('Pec-Deck Chest Fly', 'Chest Fullness', 'Keep chest tall and pause 1s at center.', '2-1-1-1', 60, 3, 14, 45),
+        ex('Machine Chest Press', 'Pectorals', 'Smooth 3s negative; explosive drive.', '3-1-1-0', 60, 3, 12, 65),
+      ],
+      [
+        ex('Cable Lateral Raise (Burnout)', 'Side Delt Cap', 'Final shoulder sweep pump to sharpen V-taper width.', '2-0-1-0', 45, 3, 16, 7.5),
+        ex('Seated Dumbbell Concentration Curl', 'Bicep Peak', 'Slow 3s lowering to full extension.', '3-1-1-1', 45, 3, 12, 14),
+        ex('Straight-Bar Tricep Pushdown', 'Tricep Sweep', 'Keep elbows pinned tightly beside ribs.', '2-1-1-1', 45, 3, 15, 27.5),
       ],
     ],
   },
@@ -1576,6 +1811,16 @@ const MALE_HYPERTROPHY_MASS_SPLIT: DayBlueprint[] = [
         ex('Straight-Bar Tricep Pushdown', 'Triceps', 'Full lockout with zero shoulder roll forward.', '2-1-1-1', 60, 3, 12, 32.5),
         ex('Overhead EZ-Bar Extension', 'Tricep Long Head', 'Deep controlled stretch behind head.', '3-1-1-0', 60, 3, 12, 30),
       ],
+      [
+        ex('Seated Dumbbell Shoulder Press', 'Anterior & Medial Delts', 'Controlled descent to ear level; drive up.', '3-1-1-0', 90, 3, 10, 24),
+        ex('Cable Lateral Raise', 'Side Delts', 'Sweep smoothly out in scapular plane.', '2-1-1-0', 60, 3, 14, 7.5),
+        ex('Dumbbell Lateral Raise', 'Lateral Delts', 'Strict form; pause slightly at top.', '2-1-1-1', 60, 3, 15, 12.5),
+      ],
+      [
+        ex('Rope Overhead Tricep Extension', 'Tricep Long Head Finisher', 'Full stretch behind head; crisp lockout.', '2-1-1-0', 45, 3, 14, 25),
+        ex('Single-Arm Cable Tricep Pushdown', 'Triceps', 'Control return without elbow flare.', '2-1-1-1', 45, 3, 15, 12.5),
+        ex('Hanging Leg Raise', 'Core Density', 'Curl pelvis cleanly upward without swinging.', '2-1-2-0', 45, 3, 12, 0),
+      ],
     ],
   },
   {
@@ -1632,6 +1877,16 @@ const MALE_HYPERTROPHY_MASS_SPLIT: DayBlueprint[] = [
         ex('Seated Incline Dumbbell Curl', 'Bicep Long Head', 'Full stretch behind torso every repetition.', '3-1-1-0', 60, 3, 12, 14),
         ex('Hammer Dumbbell Curl', 'Brachialis & Forearms', 'Controlled neutral grip up and down.', '2-1-2-0', 60, 3, 12, 18),
       ],
+      [
+        ex('Single-Arm Dumbbell Row', 'Lat Thickness', 'Pull dumbbell straight toward hip pocket.', '2-1-1-0', 75, 3, 10, 34),
+        ex('Chest-Supported Dumbbell Row', 'Mid-Back Density', 'Retract shoulder blades cleanly for 1s pause.', '2-1-1-1', 75, 3, 12, 26),
+        ex('Straight-Arm Cable Pullover', 'Lats & Serratus', 'Keep arms long and sweep down to thighs.', '2-1-1-1', 60, 3, 14, 27.5),
+      ],
+      [
+        ex('EZ-Bar Preacher Curl (Drop Finisher)', 'Biceps Peak', 'Controlled 3s lowering all the way down.', '3-1-1-0', 45, 3, 12, 30),
+        ex('Reverse Barbell Forearm Curl', 'Forearms & Grip', 'Keep wrists straight and lower slowly.', '2-1-2-0', 45, 3, 15, 22.5),
+        ex('Farmer Dumbbell Hold / Walk', 'Grip & Upper Traps', 'Brace tall and hold heavy dumbbells 40m.', '35m Walk', 60, 3, 1, 32),
+      ],
     ],
   },
   {
@@ -1687,6 +1942,16 @@ const MALE_HYPERTROPHY_MASS_SPLIT: DayBlueprint[] = [
         ex('Standing Calf Raise', 'Calves', 'Full 2s stretch at bottom of every repetition.', '2-2-1-1', 60, 4, 15, 65),
         ex('Seated Calf Raise', 'Soleus', 'Pause 2s in deep ankle dorsiflexion.', '2-2-1-1', 60, 4, 15, 50),
         ex('Leg Press Calf Raise', 'Calves', 'Controlled push through ball of foot.', '2-2-1-1', 60, 4, 16, 120),
+      ],
+      [
+        ex('Walking Dumbbell Lunge', 'Quads & Glutes', 'Long controlled stride; drive forcefully through front foot.', '2-0-1-0', 75, 3, 12, 20),
+        ex('45° Weighted Back Extension', 'Hamstrings & Glutes', 'Full hinge; brace glutes hard at top.', '2-1-1-1', 60, 3, 12, 20),
+        ex('Hip Adductor Machine (Heavy)', 'Inner Thigh Mass', 'Control 2s stretch; squeeze inward.', '2-1-1-1', 60, 3, 12, 60),
+      ],
+      [
+        ex('Leg Extension (Single-Leg Burnout)', 'Quad Isolation', 'Lock 1s peak contraction at top.', '2-1-1-1', 45, 3, 15, 45),
+        ex('Weighted Cable Crunch', 'Abdominal Wall', 'Curl sternum toward pelvis with strict tempo.', '2-1-2-0', 45, 3, 15, 37.5),
+        ex('Hanging Leg Raise', 'Lower Abs & Hip Flexors', 'Slow controlled reps with zero momentum.', '2-1-2-0', 45, 3, 12, 0),
       ],
     ],
   },
@@ -1785,6 +2050,16 @@ const MALE_HYPERTROPHY_MASS_SPLIT: DayBlueprint[] = [
         ex('Dumbbell Shrug', 'Traps', 'Controlled 2s peak hold.', '2-2-1-0', 60, 3, 12, 32),
         ex('Cable Face Pulls', 'Rear Delts & Rotators', 'Pull rope wide beside temples.', '2-1-1-1', 60, 3, 15, 22.5),
       ],
+      [
+        ex('Smith Machine Chest Press (Incline)', 'Upper Chest Mass', 'Smooth 3s negative to upper sternum.', '3-1-1-0', 90, 3, 10, 70),
+        ex('Pec-Deck Chest Fly', 'Chest Density', 'Squeeze inner chest hard for 1s.', '2-1-1-1', 60, 3, 12, 55),
+        ex('Cable Chest Cross-Over', 'Pec Finish', 'Full stretch open; strong center squeeze.', '2-1-1-1', 60, 3, 14, 17.5),
+      ],
+      [
+        ex('Rope Tricep Pushdown', 'Triceps', 'Keep elbows tucked beside ribs; full lockout.', '2-1-1-1', 45, 3, 14, 27.5),
+        ex('EZ-Bar Curl', 'Biceps', 'Controlled tempo up and down without swinging.', '2-1-2-0', 45, 3, 12, 30),
+        ex('Standing Barbell Shrug', 'Traps & Yoke', 'Hold top squeeze 2s cleanly.', '2-2-1-0', 45, 3, 12, 80),
+      ],
     ],
   },
   {
@@ -1840,6 +2115,16 @@ const MALE_HYPERTROPHY_MASS_SPLIT: DayBlueprint[] = [
         ex('Ab-Wheel / Hanging Knee Raise', 'Core Mass & Stability', 'Keep ribs tucked toward pelvis; never sag spine.', '2-1-2-0', 60, 3, 12, 0),
         ex('Weighted Cable Crunch', 'Abdominal Wall', 'Curl sternum toward pelvis with strict tempo.', '2-1-2-0', 60, 3, 15, 40),
         ex('Decline Weighted Sit-Up', 'Core Strength', '3s controlled descent on every rep.', '3-1-1-0', 60, 3, 12, 10),
+      ],
+      [
+        ex('Seated Leg Curl', 'Hamstrings', 'Full knee stretch; pull heels fast and control return.', '3-1-1-0', 60, 3, 12, 50),
+        ex('Barbell Hip Thrust', 'Glutes & Lockout Power', 'Drive hips violently into lockout.', '2-1-1-1', 90, 3, 10, 95),
+        ex('Dumbbell Romanian Deadlift', 'Hamstrings & Glutes', 'Shave legs cleanly keeping lats packed.', '3-1-1-0', 75, 3, 10, 32),
+      ],
+      [
+        ex('Bayesian Cable Curl', 'Bicep Long Head', 'Face away from stack for deep bicep stretch.', '2-1-2-0', 45, 3, 12, 15),
+        ex('Overhead Rope Tricep Extension', 'Tricep Long Head', 'Full stretch behind head; crisp lockout.', '2-1-1-0', 45, 3, 14, 27.5),
+        ex('Standing Calf Raise', 'Calves', 'Full 2s stretch at bottom step.', '2-2-1-1', 45, 3, 15, 60),
       ],
     ],
   },
@@ -1936,6 +2221,21 @@ const MALE_ATHLETIC_SHRED_SPLIT: DayBlueprint[] = [
         ex('Kettlebell Burpee + Press', 'Athletic Shred', 'Crisp transitions with braced core.', '40s Work', 45, 4, 10, 12),
         ex('Assault Bike 20/40 Intervals', 'Anaerobic Shred', '20s all-out sprint, 40s steady spin.', '20s Sprint', 60, 5, 1, 0),
       ],
+      [
+        ex('Cable Chest Fly (Tempo)', 'Chest Shred', 'Keep chest tall; short 45s rest.', '2-1-1-1', 45, 3, 15, 15),
+        ex('Pec-Deck Chest Squeeze', 'Pecs', 'Strong 1s hold at peak contraction.', '2-1-1-1', 45, 3, 14, 45),
+        ex('Decline Explosive Push-Up', 'Chest & Speed', 'Drive hands briskly off floor/bench.', 'Explosive', 45, 3, 12, 0),
+      ],
+      [
+        ex('Overhead Rope Tricep Extension', 'Triceps & Conditioning', 'Full stretch overhead; snappy lockout.', '2-1-1-0', 45, 3, 15, 22.5),
+        ex('Behind-Back Cable Lateral Raise', 'Side Delts', 'Continuous tension sweeping outward.', '2-1-1-0', 45, 3, 15, 7.5),
+        ex('Rope Tricep Pushdown', 'Triceps', 'Split rope cleanly at bottom.', '2-1-1-1', 45, 3, 15, 25),
+      ],
+      [
+        ex('Ab-Wheel / Hanging Knee Raise', 'Core Shred', 'Curl pelvis upward without swinging.', '2-1-2-0', 45, 3, 14, 0),
+        ex('Plank Shoulder Taps', 'Core Stability', 'Keep hips motionless while alternating hands.', 'Controlled', 45, 3, 20, 0),
+        ex('Mountain Climber Sprints', 'Cardio Core', '30s crisp rapid drive.', '30s Work', 45, 3, 1, 0),
+      ],
     ],
   },
   {
@@ -1987,6 +2287,21 @@ const MALE_ATHLETIC_SHRED_SPLIT: DayBlueprint[] = [
         ex('Heavy Farmer Dumbbell Carry', 'Grip, Traps & Core', '40m fast stride with tall braced posture.', '40m Walk', 60, 4, 1, 28),
         ex('SkiErg / Battle Rope Finisher', 'Upper-Body Conditioning', '30s hard pull / 30s recover.', '30s Work', 60, 4, 1, 0),
       ],
+      [
+        ex('Straight-Arm Cable Pulldown', 'Lats & Serratus', 'Keep core braced and press bar down to thighs.', '2-1-1-1', 45, 3, 15, 25),
+        ex('Neutral-Grip Lat Pulldown', 'Lats', 'Pull elbows vertically downward cleanly.', '2-1-1-0', 60, 3, 12, 57.5),
+        ex('Band-Assisted Strict Pull-Up', 'Back Endurance', 'High-rep strict dead-hang pulls.', '2-1-1-0', 60, 3, 12, 0),
+      ],
+      [
+        ex('Cable Face Pulls', 'Rear Delts & Posture', 'Pull rope wide beside temples.', '2-1-1-1', 45, 3, 15, 20),
+        ex('Alternating Dumbbell Hammer Curl', 'Biceps & Forearms', 'Keep upper arms pinned; crisp tempo.', '2-1-1-0', 45, 3, 14, 16),
+        ex('EZ-Bar Bicep Curl', 'Biceps', 'Controlled 3s eccentric on every rep.', '3-1-1-0', 45, 3, 12, 30),
+      ],
+      [
+        ex('Hollow-Body Hold / Flutter Kicks', 'Core Shred', 'Keep lower spine pinned flat into floor.', '30s Work', 45, 3, 1, 0),
+        ex('Cable Woodchop (Fast Pull)', 'Rotational Core', 'Rotate cleanly from thoracic spine.', '2-1-X-0', 45, 3, 12, 17.5),
+        ex('Hanging Straight-Leg Raise', 'Lower Abs', 'Lift toes smoothly without swinging.', '2-1-2-0', 45, 3, 12, 0),
+      ],
     ],
   },
   {
@@ -2037,6 +2352,21 @@ const MALE_ATHLETIC_SHRED_SPLIT: DayBlueprint[] = [
         ex('Sled Push / Incline Treadmill Sprints', 'Lower Shred', '20s hard drive / 40s walk recovery.', '20s Sprint', 60, 5, 1, 0),
         ex('Box Jumps / Step-Up Explosive', 'Athletic Power', 'Land softly in quarter-squat every jump.', 'Explosive', 60, 3, 10, 0),
         ex('Assault Bike Leg Flush', 'Conditioning', '4 minutes steady high-cadence burn.', '4 Mins', 60, 1, 4, 0),
+      ],
+      [
+        ex('Seated Leg Curl', 'Hamstrings', 'Fast pull; 3s controlled return.', '3-1-1-0', 60, 3, 12, 47.5),
+        ex('Leg Extension (Metabolic Burn)', 'Quads', 'Short 45s rest for crisp quad separation.', '2-1-1-1', 45, 3, 15, 50),
+        ex('Leg Press (High Cadence)', 'Leg Density', '20 unbroken controlled repetitions.', '2-0-1-0', 60, 3, 16, 130),
+      ],
+      [
+        ex('Standing Calf Raise', 'Calves', '2s bottom stretch; explosive drive.', '2-2-1-1', 45, 3, 16, 55),
+        ex('Seated Calf Raise', 'Soleus', 'Full ankle range without bouncing.', '2-2-1-1', 45, 3, 16, 42.5),
+        ex('Jump Rope / Pogo Calf Conditioning', 'Ankle Elasticity', '60s crisp rhythmic jumps.', '60s Work', 45, 3, 1, 0),
+      ],
+      [
+        ex('Weighted Cable Crunch', 'Abs', 'Curl ribs toward pelvis with strong exhale.', '2-1-2-0', 45, 3, 15, 35),
+        ex('Reverse Crunch', 'Lower Abs', 'Control 3s lower back to bench.', '3-1-1-0', 45, 3, 15, 0),
+        ex('Side Plank + Hip Lift', 'Lateral Core', 'Keep body straight as an arrow.', '30s Hold', 45, 3, 1, 0),
       ],
     ],
   },
@@ -2130,6 +2460,21 @@ const MALE_ATHLETIC_SHRED_SPLIT: DayBlueprint[] = [
         ex('Cable Woodchop + Plank Hold', 'Rotational Core', 'Explosive pull across body; slow return.', '2-1-2-0', 45, 3, 12, 20),
         ex('Hollow-Body Flutter Kicks', 'Lower Abs', 'Keep lumbar spine glued flat to mat.', '30s Work', 45, 4, 1, 0),
       ],
+      [
+        ex('Chest-Supported Dumbbell Row', 'Upper Back', 'Drive elbows high toward hips with 1s squeeze.', '2-1-1-1', 60, 3, 12, 24),
+        ex('Cable Chest Cross-Over', 'Pec Definition', 'Sweep hands cleanly together with proud chest.', '2-1-1-1', 45, 3, 15, 15),
+        ex('Straight-Arm Pulldown', 'Lats & Core', 'Sweep bar cleanly down to thighs.', '2-1-1-1', 45, 3, 15, 25),
+      ],
+      [
+        ex('Rope Face Pulls', 'Rear Delts', 'Pull rope beside ears with external rotation.', '2-1-1-1', 45, 3, 15, 20),
+        ex('Alternating Bicep Curl + Pushdown', 'Arms Density', 'Minimal rest between biceps and triceps.', '2-1-1-0', 45, 3, 14, 14),
+        ex('Dumbbell Shrug + Carry', 'Traps & Conditioning', '12 strict shrugs then 25m brisk carry.', 'Combo', 60, 3, 12, 26),
+      ],
+      [
+        ex('Incline Treadmill Sprint Intervals', 'Shred Finisher', '30s fast run / 30s recover at 6% incline.', '30s Sprint', 45, 4, 1, 0),
+        ex('Rowing Machine 250m Sprints', 'Metabolic Finish', 'Explosive leg drive every stroke.', '250m', 45, 3, 1, 0),
+        ex('Battle Rope Alternating Waves', 'Conditioning', '30s maximal rhythm / 30s rest.', '30s Work', 45, 4, 1, 0),
+      ],
     ],
   },
   {
@@ -2180,6 +2525,21 @@ const MALE_ATHLETIC_SHRED_SPLIT: DayBlueprint[] = [
         ex('Russian Twist / Med-Ball Slam', 'Core Power', 'Drive slams through hips and abs.', 'Explosive', 45, 3, 15, 10),
         ex('Mountain Climber Sprints', 'Conditioning & Abs', '30s fast drive keeping shoulders stacked over wrists.', '30s Work', 45, 4, 1, 0),
         ex('V-Up + Plank Finisher', 'Core Definition', '15 crisp V-ups straight into 30s plank.', 'Controlled', 45, 3, 15, 0),
+      ],
+      [
+        ex('Weighted Pull-Up / Lat Pulldown', 'Back Width', 'Full overhead stretch; pull chest cleanly to bar.', '2-1-1-0', 60, 3, 10, 60),
+        ex('Weighted Dips / Push-Ups', 'Chest & Triceps', 'Crisp lockout at top of every repetition.', '2-1-1-0', 60, 3, 12, 12.5),
+        ex('Single-Arm Kettlebell Row', 'Back & Core', 'Brace hips square while rowing smoothly.', '2-1-1-0', 60, 3, 12, 22),
+      ],
+      [
+        ex('Dumbbell Lateral Raise (High Rep)', 'Side Delts', 'Control lowering cleanly with soft elbows.', '2-1-1-0', 45, 3, 16, 10),
+        ex('Kettlebell Swing', 'Posterior Power', 'Snap hips crisply; keep ribs down.', 'Explosive', 45, 3, 20, 20),
+        ex('Walking Dumbbell Lunge', 'Leg Conditioning', 'Smooth upright torso step by step.', '2-0-1-0', 60, 3, 14, 14),
+      ],
+      [
+        ex('Assault Bike 10-Min Tempo Finish', 'Aerobic Shred', 'Keep steady high wattage throughout finish.', '10 Mins', 60, 1, 10, 0),
+        ex('Farmer Walk + Plank Superset', 'Core & Grip', '40m heavy walk into 30s hard plank.', 'Combo', 45, 3, 1, 26),
+        ex('Shadowboxing + Burpee Finisher', 'Metabolic Shred', '45s high-tempo combos / 15s recover.', '45s Work', 45, 3, 1, 0),
       ],
     ],
   },

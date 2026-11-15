@@ -60,7 +60,7 @@ export function CloudModal({ isOpen, onClose, theme }: CloudModalProps) {
         <div className="p-5 overflow-y-auto space-y-4">
           <p className="text-xs leading-relaxed text-white/70">
             KINETIX runs zero-config locally with multi-user persistence. To connect a live Supabase
-            project on Netlify or Vercel, execute this schema in the Supabase SQL Editor.
+            project in production, execute this schema in the Supabase SQL Editor.
           </p>
 
           <div className="bg-[#090A0F] border border-white/10 rounded-2xl p-3.5 max-h-[300px] overflow-auto">

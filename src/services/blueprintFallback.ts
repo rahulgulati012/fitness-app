@@ -42,22 +42,14 @@ function makeSets(setsCount: number, weightKg: number, reps: number, prefix: str
   }));
 }
 
-function hydrateSplit(rawDays: RawDayTemplate[], variationSeed = 0): WorkoutDay[] {
-  return rawDays.map((d) => ({
-    dayIndex: d.dayIndex,
-    dayLabel: d.dayLabel,
-    title: d.title,
-    targetMuscle: d.targetMuscle,
-    durationMin: d.durationMin,
-    isRestDay: d.isRestDay,
-    warmupTitle: d.warmupTitle,
-    warmupDrills: d.warmupDrills.map((w, idx): WarmupDrill => ({
-      id: `d${d.dayIndex}-v${variationSeed}-w${idx}`,
-      name: w.name,
-      prescription: w.prescription,
-      completed: false,
-    })),
-    exercises: d.exercises.map((e, idx): ExercisePlan => {
+function hydrateSplit(
+  rawDays: RawDayTemplate[],
+  fallbackSplit: WorkoutDay[],
+  variationSeed = 0
+): WorkoutDay[] {
+  return rawDays.map((d, mapIdx) => {
+    const fallbackDay = fallbackSplit[d.dayIndex] ?? fallbackSplit[mapIdx] ?? fallbackSplit[0];
+    const mappedExercises: ExercisePlan[] = d.exercises.map((e, idx): ExercisePlan => {
       const exId = `d${d.dayIndex}-v${variationSeed}-e${idx}`;
       return {
         id: exId,
@@ -68,8 +60,45 @@ function hydrateSplit(rawDays: RawDayTemplate[], variationSeed = 0): WorkoutDay[
         restSeconds: e.restSeconds,
         sets: makeSets(e.setsCount, e.suggestedWeightKg, e.targetReps, exId),
       };
-    }),
-  }));
+    });
+
+    let finalExercises = mappedExercises;
+    if (!d.isRestDay) {
+      if (finalExercises.length < 6 && fallbackDay) {
+        const usedNames = new Set(finalExercises.map((ex) => ex.name.toLowerCase()));
+        const extras = fallbackDay.exercises.filter(
+          (ex) => !usedNames.has(ex.name.toLowerCase())
+        );
+        finalExercises = [...finalExercises, ...extras].slice(0, 6);
+        while (finalExercises.length < 6 && fallbackDay.exercises.length > 0) {
+          const nextEx = fallbackDay.exercises[finalExercises.length % fallbackDay.exercises.length];
+          finalExercises.push({
+            ...nextEx,
+            id: `d${d.dayIndex}-v${variationSeed}-pad-${finalExercises.length}`,
+          });
+        }
+      } else if (finalExercises.length > 6) {
+        finalExercises = finalExercises.slice(0, 6);
+      }
+    }
+
+    return {
+      dayIndex: d.dayIndex,
+      dayLabel: d.dayLabel,
+      title: d.title,
+      targetMuscle: d.targetMuscle,
+      durationMin: d.durationMin,
+      isRestDay: d.isRestDay,
+      warmupTitle: d.warmupTitle,
+      warmupDrills: d.warmupDrills.map((w, idx): WarmupDrill => ({
+        id: `d${d.dayIndex}-v${variationSeed}-w${idx}`,
+        name: w.name,
+        prescription: w.prescription,
+        completed: false,
+      })),
+      exercises: finalExercises,
+    };
+  });
 }
 
 export function buildFallbackQuotes(
@@ -107,6 +136,12 @@ export async function generateAthleteBlueprint(
   source: 'gemini-2.5-flash' | 'kinetix-engine';
 }> {
   const seed = input.variationSeed ?? 0;
+  const deterministicSplit = buildVariedSplit(
+    input.gender,
+    input.goal,
+    input.metrics.weightKg,
+    seed
+  );
   const avoidExercises = (input.previousSplit ?? [])
     .flatMap((d) => d.exercises.map((e) => e.name))
     .slice(0, 16);
@@ -142,7 +177,11 @@ export async function generateAthleteBlueprint(
         Array.isArray(data.blueprint.quotes) &&
         data.blueprint.quotes.length > 0
       ) {
-        const hydrated = hydrateSplit(data.blueprint.split as RawDayTemplate[], seed);
+        const hydrated = hydrateSplit(
+          data.blueprint.split as RawDayTemplate[],
+          deterministicSplit,
+          seed
+        );
         // Guarantee distinctness from previousSplit if regenerating
         const prevFirst = input.previousSplit?.[0]?.exercises?.[0]?.name;
         const nextFirst = hydrated[0]?.exercises?.[0]?.name;
@@ -156,7 +195,7 @@ export async function generateAthleteBlueprint(
       }
     }
   } catch {
-    // Static hosts (Netlify) or offline: check optional Vite key or use rich multi-split engine
+    // Static hosts or offline: check optional Vite key or use rich multi-split engine
   }
 
   // Optional static-host support if deployer sets VITE_GEMINI_API_KEY
@@ -170,7 +209,7 @@ export async function generateAthleteBlueprint(
         avoidExercises.length > 0
           ? ` Avoid repeating these previous exercises: ${avoidExercises.join(', ')}.`
           : '';
-      const prompt = `Return ONLY valid JSON with keys "split" (7 objects dayIndex 0..6, dayLabel Mon..Sun, title, targetMuscle, durationMin, isRestDay, warmupTitle, warmupDrills[{name,prescription}], exercises[{name,muscle,cue,tempo,restSeconds,setsCount,targetReps,suggestedWeightKg}]) and "quotes" (20 strings addressing ${firstName}). Profile: gender=${input.gender}, goal=${input.goal}, height=${input.metrics.heightCm}cm, weight=${input.metrics.weightKg}kg, age=${input.metrics.age}, variationSeed=${seed}.${avoidLine}`;
+      const prompt = `Return ONLY valid JSON with keys "split" (7 objects dayIndex 0..6, dayLabel Mon..Sun, title, targetMuscle, durationMin, isRestDay, warmupTitle, warmupDrills[{name,prescription}], exercises[{name,muscle,cue,tempo,restSeconds,setsCount,targetReps,suggestedWeightKg}] — STRICTLY 6 distinct sequenced exercises on every non-rest day: 2 primary compounds, 2 secondary hypertrophy, 2 targeted isolation/finisher) and "quotes" (20 strings addressing ${firstName}). Profile: gender=${input.gender}, goal=${input.goal}, height=${input.metrics.heightCm}cm, weight=${input.metrics.weightKg}kg, age=${input.metrics.age}, variationSeed=${seed}.${avoidLine}`;
 
       const restRes = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(
@@ -196,7 +235,11 @@ export async function generateAthleteBlueprint(
             Array.isArray(parsed.quotes) &&
             parsed.quotes.length > 0
           ) {
-            const hydrated = hydrateSplit(parsed.split as RawDayTemplate[], seed);
+            const hydrated = hydrateSplit(
+              parsed.split as RawDayTemplate[],
+              deterministicSplit,
+              seed
+            );
             const prevFirst = input.previousSplit?.[0]?.exercises?.[0]?.name;
             const nextFirst = hydrated[0]?.exercises?.[0]?.name;
             if (!prevFirst || prevFirst !== nextFirst || seed === 0) {
@@ -215,7 +258,7 @@ export async function generateAthleteBlueprint(
   }
 
   return {
-    split: buildVariedSplit(input.gender, input.goal, input.metrics.weightKg, seed),
+    split: deterministicSplit,
     quotes: buildVariedQuotes(input.name, input.schedule.vibe, seed),
     source: 'kinetix-engine',
   };

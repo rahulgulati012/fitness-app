@@ -426,7 +426,7 @@ export function ProfileTab({
           className="w-full min-h-[46px] rounded-2xl bg-[#1A1D28] border border-white/10 hover:border-white/25 text-xs font-semibold text-white flex items-center justify-center gap-2 transition-colors"
         >
           <Database className="w-4 h-4" style={{ color: theme.secondary }} />
-          <span>Supabase &amp; Netlify Ready SQL Drawer</span>
+          <span>Cloud &amp; Supabase SQL Drawer</span>
         </button>
 
         <div className="grid grid-cols-2 gap-2.5 pt-1">

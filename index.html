@@ -18,7 +18,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Kinetix" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -26,6 +26,44 @@
       href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Outfit:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <script>
+      (function () {
+        function purgeInjectedWatermarks(root) {
+          var scope = root && root.querySelectorAll ? root : document;
+          var selectors = 'iframe[src*="netlify" i], [class*="netlify" i], [id*="netlify" i], [data-netlify], a[href*="netlify.com"]';
+          scope.querySelectorAll(selectors).forEach(function (el) {
+            if (el.id !== 'root') el.remove();
+          });
+          var candidates = scope.querySelectorAll('div, aside, footer, section, a, span');
+          candidates.forEach(function (el) {
+            if (!el || el.id === 'root' || (el.closest && el.closest('#root') && el.children.length > 3)) return;
+            var txt = (el.textContent || '').trim();
+            if (/powered\s+by\s+netlify/i.test(txt) && txt.length < 120) {
+              var hostBanner = el.closest('[style*="fixed"], [style*="sticky"], footer, aside') || el;
+              if (hostBanner && hostBanner.id !== 'root') {
+                hostBanner.style.setProperty('display', 'none', 'important');
+                hostBanner.remove();
+              }
+            }
+          });
+        }
+        if (typeof MutationObserver !== 'undefined') {
+          var observer = new MutationObserver(function (mutations) {
+            for (var i = 0; i < mutations.length; i++) {
+              var added = mutations[i].addedNodes;
+              for (var j = 0; j < added.length; j++) {
+                if (added[j] && added[j].nodeType === 1) {
+                  purgeInjectedWatermarks(added[j].parentElement || document);
+                }
+              }
+            }
+          });
+          observer.observe(document.documentElement, { childList: true, subtree: true });
+        }
+        document.addEventListener('DOMContentLoaded', function () { purgeInjectedWatermarks(document); });
+        window.addEventListener('load', function () { purgeInjectedWatermarks(document); });
+      })();
+    </script>
   </head>
   <body class="bg-[#050508] text-white antialiased selection:bg-rose-500/30 selection:text-white">
     <div id="root"></div>
