@@ -4,6 +4,7 @@ import { ArrowRight, Database, Lock, Mail, UserPlus } from 'lucide-react';
 import type { UserProfile } from '../types/kinetix';
 import { getShortGoalLabel, UNIVERSAL_THEME } from '../services/theme';
 import { AthleteAvatar } from './AthleteAvatar';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface AuthScreenProps {
   users: UserProfile[];
@@ -222,12 +223,13 @@ export function AuthScreen({
         </section>
       </div>
 
-      {/* Footer Cloud & Schema trigger */}
-      <div className="relative z-10 pt-6 flex items-center justify-center">
+      {/* Footer PWA Install + Cloud Setup */}
+      <div className="relative z-10 pt-6 flex flex-col items-center gap-2.5">
+        <PWAInstallButton theme={theme} compact />
         <button
           type="button"
           onClick={onOpenCloudModal}
-          className="min-h-[44px] px-4 rounded-2xl text-xs font-medium text-white/55 hover:text-white flex items-center gap-2 transition-colors"
+          className="min-h-[40px] px-4 rounded-2xl text-xs font-medium text-white/55 hover:text-white flex items-center gap-2 transition-colors"
         >
           <Database className="w-3.5 h-3.5" />
           <span>Cloud & Supabase Setup</span>

@@ -10,7 +10,7 @@ import type {
   UserProfile,
   WorkoutDay,
 } from '../types/kinetix';
-import { buildFallbackQuotes, buildFallbackSplit } from './blueprintFallback';
+import { buildVariedQuotes, buildVariedSplit } from '../data/workoutEngine';
 
 const STORAGE_KEY = 'kinetix_db_v1';
 
@@ -280,10 +280,10 @@ interface KinetixDbState {
 function createSeedUsers(): UserProfile[] {
   const today = getTodayDateKey();
 
-  const elenaSplit = buildFallbackSplit('female', 'Hourglass & Glute Sculpt', 54.3);
-  const marcusSplit = buildFallbackSplit('male', 'V-Taper Aesthetic', 82.5);
-  const siennaSplit = buildFallbackSplit('female', 'Athletic & Toned', 60);
-  const devonSplit = buildFallbackSplit('male', 'Athletic Shred', 78);
+  const elenaSplit = buildVariedSplit('female', 'Hourglass & Glute Sculpt', 54.3, 0);
+  const marcusSplit = buildVariedSplit('male', 'V-Taper Aesthetic', 82.5, 0);
+  const siennaSplit = buildVariedSplit('female', 'Athletic & Toned', 60, 0);
+  const devonSplit = buildVariedSplit('male', 'Athletic Shred', 78, 0);
 
   return [
     {
@@ -306,7 +306,8 @@ function createSeedUsers(): UserProfile[] {
       hypeReceived: 14,
       squadIds: ['demo-marcus', 'demo-sienna'],
       split: elenaSplit,
-      quotes: buildFallbackQuotes('Elena', 'Confident & Indulging'),
+      quotes: buildVariedQuotes('Elena', 'Confident & Indulging', 0),
+      planVersion: 1,
       dailyLog: {
         dateKey: today,
         waterMl: 1750,
@@ -363,7 +364,8 @@ function createSeedUsers(): UserProfile[] {
       hypeReceived: 22,
       squadIds: ['demo-elena', 'demo-devon'],
       split: marcusSplit,
-      quotes: buildFallbackQuotes('Marcus', 'Elite Discipline'),
+      quotes: buildVariedQuotes('Marcus', 'Elite Discipline', 0),
+      planVersion: 1,
       dailyLog: {
         dateKey: today,
         waterMl: 2850,
@@ -413,7 +415,8 @@ function createSeedUsers(): UserProfile[] {
       hypeReceived: 19,
       squadIds: ['demo-elena'],
       split: siennaSplit,
-      quotes: buildFallbackQuotes('Sienna', 'Unapologetic Hype'),
+      quotes: buildVariedQuotes('Sienna', 'Unapologetic Hype', 0),
+      planVersion: 1,
       dailyLog: {
         dateKey: today,
         waterMl: 2350,
@@ -454,7 +457,8 @@ function createSeedUsers(): UserProfile[] {
       hypeReceived: 11,
       squadIds: ['demo-marcus'],
       split: devonSplit,
-      quotes: buildFallbackQuotes('Devon', 'Unapologetic Hype'),
+      quotes: buildVariedQuotes('Devon', 'Unapologetic Hype', 0),
+      planVersion: 1,
       dailyLog: {
         dateKey: today,
         waterMl: 2700,
@@ -509,6 +513,10 @@ function hydrateLegacyUser(u: UserProfile): { user: UserProfile; changed: boolea
   }
   if (!Array.isArray(next.recentWorkouts) || next.recentWorkouts.length === 0) {
     next.recentWorkouts = buildSeedRecentWorkouts(next.split);
+    changed = true;
+  }
+  if (typeof next.planVersion !== 'number') {
+    next.planVersion = 1;
     changed = true;
   }
 
@@ -666,6 +674,7 @@ export const db = {
       squadIds: [],
       split: input.split,
       quotes: input.quotes,
+      planVersion: 1,
       dailyLog: {
         dateKey: today,
         waterMl: initWater,

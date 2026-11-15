@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <radialGradient id="bg-glow" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#22131F" />
+      <stop offset="100%" stop-color="#090A0F" />
+    </radialGradient>
+    <linearGradient id="k-grad" x1="120" y1="100" x2="400" y2="412" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF2E63" />
+      <stop offset="100%" stop-color="#FF8C42" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg-glow)" />
+  <path
+    d="M156 118V394M236 256L364 118M236 256L372 394"
+    stroke="url(#k-grad)"
+    stroke-width="48"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

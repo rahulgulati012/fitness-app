@@ -145,6 +145,7 @@ export interface UserProfile {
   reminders: ReminderSettings;
   notifications: NotificationItem[];
   blueprintSource: 'gemini-2.5-flash' | 'kinetix-engine';
+  planVersion?: number;
   createdAt: string;
 }
 

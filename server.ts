@@ -13,6 +13,8 @@ interface BlueprintRequest {
   name: string;
   gender: "female" | "male";
   goal: string;
+  variationSeed?: number;
+  avoidExercises?: string[];
   metrics: {
     heightCm: number;
     weightKg: number;
@@ -27,7 +29,7 @@ interface BlueprintRequest {
 }
 
 function getGeminiClient(): GoogleGenAI | null {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey === "MY_GEMINI_API_KEY" || apiKey.trim() === "") {
     return null;
   }
@@ -137,7 +139,13 @@ async function startServer() {
     }
 
     const firstName = body.name.trim().split(/\s+/)[0] || body.name.trim();
-    const prompt = `Create a science-backed 7-day training split and 20 personalized motivational quotes for athlete "${firstName}".
+    const seed = body.variationSeed ?? 0;
+    const avoidClause =
+      Array.isArray(body.avoidExercises) && body.avoidExercises.length > 0
+        ? `\n6. IMPORTANT REGENERATION RULE (Variation #${seed}): Pick fresh exercise variations and different warm-up drills; avoid repeating these previous primary exercises: ${body.avoidExercises.slice(0, 14).join(", ")}.`
+        : "";
+
+    const prompt = `Create a science-backed 7-day training split (Variation #${seed}) and 20 personalized motivational quotes for athlete "${firstName}".
 Profile:
 - Gender: ${body.gender}
 - Physique Goal: ${body.goal}
@@ -146,12 +154,17 @@ Profile:
 - Motivation Vibe: ${body.schedule?.vibe ?? "Confident & Indulging"}
 
 Rules:
-1. Return exactly 7 days in "split" ordered dayIndex 0 (Mon) through 6 (Sun) with dayLabel "Mon".."Sun". Include 5 training days and 2 active recovery/rest days (e.g., Thu & Sun).
-2. If goal is "Hourglass & Glute Sculpt", emphasize upper/lower glutes, side delts, and TVA/vacuum core with zero bulky oblique work.
-3. If goal is "V-Taper Aesthetic", emphasize wide lats, capped 3D side delts, upper chest shelf, and tight waist ratio.
-4. Each training day needs 3-4 specific dynamic warmupDrills matching that day's target muscle, and 4-5 tailored exercises with realistic starter weights in kg, coaching cues, tempo (e.g., "3-1-1-0"), and restSeconds (60, 90, or 120).
-5. Active recovery days should have isRestDay: true, 3 mobility warmupDrills, and 2 light recovery/walk/core drills in exercises (or empty exercises if purely rest, preferably 2 gentle mobility/zone-2 items).
-6. Return exactly 20 short, high-impact quotes in "quotes", each addressing "${firstName}" naturally in the "${body.schedule?.vibe ?? "Confident & Indulging"}" tone.`;
+1. Return exactly 7 days in "split" ordered dayIndex 0 (Mon) through 6 (Sun) with dayLabel "Mon".."Sun". Include 6 structured days (5-6 training days + 1 active recovery day, with Sun as rest/recovery).
+2. Make the split unmistakably distinct for "${body.gender}" + "${body.goal}":
+   - Female "Hourglass & Glute Sculpt": upper/lower glutes, side delts, TVA vacuum core (zero bulky obliques).
+   - Female "Athletic & Toned": lower power, upper symmetry, metabolic conditioning.
+   - Female "Lean & Petite Sculpt": calorie-torch circuits, posture alignment, high-rep tone, step floor.
+   - Male "V-Taper Aesthetic": clavicular upper chest shelf, wide lats, 3D side delts, tight waist.
+   - Male "Hypertrophy & Mass": heavy compound barbell/machine tension and dense volume.
+   - Male "Athletic Shred": explosive speed-strength paired with metabolic conditioning & core shred.
+3. Each training day needs 3-4 specific dynamic warmupDrills matching that day's target muscle, and 3-4 tailored exercises with realistic starter weights in kg, coaching cues, tempo (e.g., "3-1-1-0"), and restSeconds (60, 90, or 120).
+4. Active recovery days should have isRestDay: true, 3 mobility warmupDrills, and 1-2 gentle walk/core recovery items.
+5. Return exactly 20 short, high-impact quotes in "quotes", each addressing "${firstName}" naturally in the "${body.schedule?.vibe ?? "Confident & Indulging"}" tone.${avoidClause}`;
 
     const modelsToTry = ["gemini-2.5-flash", "gemini-4-hydrogen"];
 

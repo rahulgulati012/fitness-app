@@ -9,6 +9,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import type {
+  Gender,
   PhysiqueGoal,
   ReminderSettings,
   ThemeTokens,
@@ -22,17 +23,20 @@ import {
 import { FEMALE_GOALS, MALE_GOALS } from '../services/db';
 import { generateAthleteBlueprint } from '../services/blueprintFallback';
 import { AthleteAvatar } from './AthleteAvatar';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface ProfileTabProps {
   user: UserProfile;
   theme: ThemeTokens;
   onUpdateProfileAndPlan: (updated: {
+    gender: Gender;
     metrics: UserProfile['metrics'];
     goal: PhysiqueGoal;
     schedule: UserProfile['schedule'];
     split: UserProfile['split'];
     quotes: string[];
     blueprintSource: 'gemini-2.5-flash' | 'kinetix-engine';
+    planVersion: number;
   }) => void;
   onUpdateReminders: (reminders: ReminderSettings) => void;
   onTestReminder: (kind: 'workout' | 'hydration' | 'bedtime') => void;
@@ -80,6 +84,7 @@ export function ProfileTab({
   onSignOut,
   onResetDemoData,
 }: ProfileTabProps) {
+  const [gender, setGender] = useState<Gender>(user.gender);
   const [weightKg, setWeightKg] = useState(user.metrics.weightKg);
   const [heightCm, setHeightCm] = useState(user.metrics.heightCm);
   const [age, setAge] = useState(user.metrics.age);
@@ -88,30 +93,45 @@ export function ProfileTab({
   const [bedTime, setBedTime] = useState(user.schedule.bedTime);
   const [regenerating, setRegenerating] = useState(false);
 
-  const goalOptions = user.gender === 'female' ? FEMALE_GOALS : MALE_GOALS;
+  const goalOptions = gender === 'female' ? FEMALE_GOALS : MALE_GOALS;
   const bmi = calculateBmi(heightCm, weightKg);
   const waterTarget = calculateWaterTargetMl(weightKg);
-  const sleepTarget = calculateSleepTargetHours(user.gender);
+  const sleepTarget = calculateSleepTargetHours(gender);
+
+  const handleGenderSwitch = (nextGender: Gender) => {
+    setGender(nextGender);
+    const matchingGoals = nextGender === 'female' ? FEMALE_GOALS : MALE_GOALS;
+    if (!matchingGoals.some((g) => g.title === goal)) {
+      setGoal(matchingGoals[0].title);
+    }
+  };
 
   const handleSaveAndRegenerate = async () => {
     setRegenerating(true);
+    const nextPlanVersion = (user.planVersion ?? 0) + 1;
     const nextMetrics = { heightCm, weightKg, age };
     const nextSchedule = { ...user.schedule, workoutTime, bedTime };
+
     const result = await generateAthleteBlueprint({
       name: user.name,
-      gender: user.gender,
+      gender,
       goal,
       metrics: nextMetrics,
       schedule: nextSchedule,
+      variationSeed: nextPlanVersion,
+      previousSplit: user.split,
     });
+
     setRegenerating(false);
     onUpdateProfileAndPlan({
+      gender,
       metrics: nextMetrics,
       goal,
       schedule: nextSchedule,
       split: result.split,
       quotes: result.quotes,
       blueprintSource: result.source,
+      planVersion: nextPlanVersion,
     });
   };
 
@@ -143,7 +163,35 @@ export function ProfileTab({
             <Sliders className="w-4 h-4" style={{ color: theme.primary }} />
             <h2 className="text-sm font-bold text-white">Personalize Routine</h2>
           </div>
-          <span className="text-[10px] text-white/50">Custom Blueprint</span>
+          <span className="text-[10px] text-white/50 font-mono-tabular">
+            Plan v{user.planVersion ?? 1}
+          </span>
+        </div>
+
+        {/* Physiological Gender Selector */}
+        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-[#090A0F] border border-white/[0.06]">
+          <button
+            type="button"
+            onClick={() => handleGenderSwitch('female')}
+            className={`min-h-[38px] rounded-xl text-xs font-semibold transition-all ${
+              gender === 'female'
+                ? 'bg-[#1A1D28] text-white border border-rose-500/40'
+                : 'text-white/55 hover:text-white'
+            }`}
+          >
+            Female Splits
+          </button>
+          <button
+            type="button"
+            onClick={() => handleGenderSwitch('male')}
+            className={`min-h-[38px] rounded-xl text-xs font-semibold transition-all ${
+              gender === 'male'
+                ? 'bg-[#1A1D28] text-white border border-orange-500/40'
+                : 'text-white/55 hover:text-white'
+            }`}
+          >
+            Male Splits
+          </button>
         </div>
 
         <div className="grid grid-cols-3 gap-2.5">
@@ -237,6 +285,13 @@ export function ProfileTab({
           </div>
         </div>
 
+        <div className="px-3 py-2.5 rounded-2xl bg-[#090A0F]/70 border border-white/[0.06] text-[11px] text-white/70 space-y-0.5">
+          <p className="text-white/50">Active Split Lead</p>
+          <p className="font-semibold text-white truncate">
+            {user.split[0]?.title} · {user.split[0]?.exercises[0]?.name}
+          </p>
+        </div>
+
         <button
           type="button"
           disabled={regenerating}
@@ -255,7 +310,7 @@ export function ProfileTab({
           ) : (
             <>
               <RefreshCw className="w-4 h-4" />
-              <span>Save Metrics & Regenerate Plan</span>
+              <span>Save Metrics &amp; Regenerate Plan</span>
             </>
           )}
         </button>
@@ -302,7 +357,7 @@ export function ProfileTab({
           <div className="pt-3 space-y-2.5">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-xs font-semibold text-white">Hydration & Step Pings</p>
+                <p className="text-xs font-semibold text-white">Hydration &amp; Step Pings</p>
                 <p className="text-[11px] text-white/55">
                   Every 3h: 300ml water + 1,000 step prompt
                 </p>
@@ -325,7 +380,7 @@ export function ProfileTab({
               className="w-full min-h-[40px] rounded-xl bg-[#1A1D28] border border-white/10 hover:border-white/25 text-xs font-medium text-white/85 flex items-center justify-center gap-1.5"
             >
               <Bell className="w-3.5 h-3.5" style={{ color: theme.secondary }} />
-              <span>Test Hydration & Step Ping</span>
+              <span>Test Hydration &amp; Step Ping</span>
             </button>
           </div>
 
@@ -361,15 +416,17 @@ export function ProfileTab({
         </div>
       </section>
 
-      {/* Cloud & Supabase Export + Account Controls */}
+      {/* PWA Install + Cloud Export + Account Controls */}
       <section className="bg-[#12141C]/85 backdrop-blur-xl border border-white/[0.08] rounded-3xl p-5 shadow-lg space-y-2.5">
+        <PWAInstallButton theme={theme} />
+
         <button
           type="button"
           onClick={onOpenCloudModal}
           className="w-full min-h-[46px] rounded-2xl bg-[#1A1D28] border border-white/10 hover:border-white/25 text-xs font-semibold text-white flex items-center justify-center gap-2 transition-colors"
         >
           <Database className="w-4 h-4" style={{ color: theme.secondary }} />
-          <span>Supabase & Netlify Ready SQL Drawer</span>
+          <span>Supabase &amp; Netlify Ready SQL Drawer</span>
         </button>
 
         <div className="grid grid-cols-2 gap-2.5 pt-1">

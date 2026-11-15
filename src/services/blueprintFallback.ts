@@ -9,6 +9,7 @@ import type {
   WarmupDrill,
   WorkoutDay,
 } from '../types/kinetix';
+import { buildVariedQuotes, buildVariedSplit } from '../data/workoutEngine';
 
 interface RawDayTemplate {
   dayIndex: number;
@@ -41,7 +42,7 @@ function makeSets(setsCount: number, weightKg: number, reps: number, prefix: str
   }));
 }
 
-function hydrateSplit(rawDays: RawDayTemplate[]): WorkoutDay[] {
+function hydrateSplit(rawDays: RawDayTemplate[], variationSeed = 0): WorkoutDay[] {
   return rawDays.map((d) => ({
     dayIndex: d.dayIndex,
     dayLabel: d.dayLabel,
@@ -51,1417 +52,41 @@ function hydrateSplit(rawDays: RawDayTemplate[]): WorkoutDay[] {
     isRestDay: d.isRestDay,
     warmupTitle: d.warmupTitle,
     warmupDrills: d.warmupDrills.map((w, idx): WarmupDrill => ({
-      id: `d${d.dayIndex}-w${idx}`,
+      id: `d${d.dayIndex}-v${variationSeed}-w${idx}`,
       name: w.name,
       prescription: w.prescription,
       completed: false,
     })),
-    exercises: d.exercises.map((e, idx): ExercisePlan => ({
-      id: `d${d.dayIndex}-e${idx}`,
-      name: e.name,
-      muscle: e.muscle,
-      cue: e.cue,
-      tempo: e.tempo,
-      restSeconds: e.restSeconds,
-      sets: makeSets(e.setsCount, e.suggestedWeightKg, e.targetReps, `d${d.dayIndex}-e${idx}`),
-    })),
+    exercises: d.exercises.map((e, idx): ExercisePlan => {
+      const exId = `d${d.dayIndex}-v${variationSeed}-e${idx}`;
+      return {
+        id: exId,
+        name: e.name,
+        muscle: e.muscle,
+        cue: e.cue,
+        tempo: e.tempo,
+        restSeconds: e.restSeconds,
+        sets: makeSets(e.setsCount, e.suggestedWeightKg, e.targetReps, exId),
+      };
+    }),
   }));
 }
 
-export function buildFallbackQuotes(name: string, vibe: MotivationVibe): string[] {
-  const first = name.trim().split(/\s+/)[0] || 'Athlete';
-
-  if (vibe === 'Unapologetic Hype') {
-    return [
-      `${first}, nobody builds a signature silhouette by negotiating with comfort.`,
-      `Clock in, ${first}. Every heavy rep today writes tomorrow's presence.`,
-      `${first}, the standard you tolerate in private shows up in every room you enter.`,
-      `Zero shortcuts, ${first}. Own the tempo, own the pause, own the finish.`,
-      `Energy follows execution, ${first}. Pick up the iron and set the tone.`,
-      `${first}, hydrate like an athlete, lift like a contender, recover like royalty.`,
-      `Your future physique is watching how you handle the last two reps, ${first}.`,
-      `${first}, discipline looks effortless only to people who never saw your 6 AM.`,
-      `Outwork yesterday's excuses, ${first}. Today's split is waiting.`,
-      `${first}, precision beats intensity without direction. Hit every cue clean.`,
-      `You didn't come this far to stay average, ${first}. Push the needle.`,
-      `${first}, sweat is just proof your blueprint is turning physical.`,
-      `Lock the grip, breathe through the brace, and dominate the set, ${first}.`,
-      `${first}, consistency is louder than any announcement.`,
-      `Every liter of water and every clean rep compounds in your favor, ${first}.`,
-      `${first}, make this session the hardest part of everyone else's week.`,
-      `Your squad sees the work, ${first}. Leave zero doubt on the floor.`,
-      `${first}, chase mechanical tension, not random fatigue.`,
-      `Stand tall, ${first}. You earned the right to take up space.`,
-      `${first}, finish what you started when the clock hits zero.`,
-    ];
-  }
-
-  if (vibe === 'Elite Discipline') {
-    return [
-      `${first}, precision in the warm-up dictates power in the working sets.`,
-      `Control the eccentric, ${first}. Gravity is free resistance you must earn.`,
-      `${first}, track every kilogram, log every liter, respect every hour of sleep.`,
-      `Physique architecture is a series of deliberate, unemotional decisions, ${first}.`,
-      `${first}, neural recovery is half the stimulus. Protect your bedtime window.`,
-      `Execute the plan, ${first}, especially on the days motivation stays quiet.`,
-      `${first}, three seconds down, one second pause. That is where shape is forged.`,
-      `Small daily deviations create massive quarterly results, ${first}.`,
-      `${first}, hydration fuels contraction velocity. Keep your glass moving.`,
-      `Master the boring fundamentals, ${first}, and the aesthetic takes care of itself.`,
-      `${first}, tension on the target muscle matters more than ego on the bar.`,
-      `Honor the rest timer, ${first}. Quality output requires full ATP recovery.`,
-      `${first}, align your posture, brace your core, and keep the line clean.`,
-      `Your metrics do not lie, ${first}. Let the numbers guide your next progression.`,
-      `${first}, consistency across 90 days beats intensity for 9 days.`,
-      `Step count is silent conditioning, ${first}. Hit your floor before midnight.`,
-      `${first}, treat warm-up mobility as non-negotiable armor.`,
-      `Every set logged today becomes your baseline to beat next week, ${first}.`,
-      `${first}, sleep is anabolic architecture. Shut down screens on schedule.`,
-      `Calm focus, clinical execution, measurable progress, ${first}.`,
-    ];
-  }
-
-  // Confident & Indulging (default)
-  return [
-    `${first}, you're not training to shrink — you're sculpting presence that owns the room.`,
-    `Everything fits better when your confidence is forged in iron, ${first}.`,
-    `${first}, take your time on the pause. Luxury physiques are built with patience and tension.`,
-    `Hydrate, move with poise, and watch how effortlessly your aura shifts today, ${first}.`,
-    `${first}, the mirror is just catching up to the discipline you already carry.`,
-    `Indulge in the ritual of becoming undeniable, ${first}.`,
-    `${first}, strong glutes, sculpted shoulders, calm mind — that's an unfair advantage.`,
-    `Treat today's training like an appointment with your highest self, ${first}.`,
-    `${first}, you deserve the energy that comes from 8 hours of deep recovery.`,
-    `Move with intention, ${first}. Every controlled rep refines the silhouette.`,
-    `${first}, grace under heavy load is the ultimate signature.`,
-    `Pour another glass, hit your steps, and step into the spotlight, ${first}.`,
-    `${first}, your body responds to how deeply you respect your routine.`,
-    `Slow eccentric, sharp focus, unapologetic standards, ${first}.`,
-    `${first}, you look even better when you know nobody handed you this physique.`,
-    `Let the warm-up wake up your power, ${first}. Today's session is yours.`,
-    `${first}, protect your sleep like high-performance skincare and recovery combined.`,
-    `Built by science, refined by consistency, carried by you, ${first}.`,
-    `${first}, notice how effortless discipline feels once it becomes your identity.`,
-    `Step onto the floor calm, leave knowing you raised the bar, ${first}.`,
-  ];
+export function buildFallbackQuotes(
+  name: string,
+  vibe: MotivationVibe,
+  variationSeed = 0
+): string[] {
+  return buildVariedQuotes(name, vibe, variationSeed);
 }
 
-export function buildFallbackSplit(gender: Gender, goal: PhysiqueGoal, weightKg: number): WorkoutDay[] {
-  const scale = gender === 'female' ? Math.max(0.75, weightKg / 60) : Math.max(0.8, weightKg / 78);
-  const w = (base: number) => Math.max(4, Math.round((base * scale) / 2.5) * 2.5);
-
-  if (gender === 'female') {
-    if (goal === 'Hourglass & Glute Sculpt') {
-      return hydrateSplit([
-        {
-          dayIndex: 0,
-          dayLabel: 'Mon',
-          title: 'Day 1: Glute Hypertrophy & Delts',
-          targetMuscle: 'Glutes & Side Delts',
-          durationMin: 55,
-          isRestDay: false,
-          warmupTitle: '5-Min Glute & Hip Capsule Activation',
-          warmupDrills: [
-            { name: 'Banded Lateral Monster Walks', prescription: '2 x 16 steps each side' },
-            { name: 'Bodyweight Frog Pumps', prescription: '2 x 20 controlled reps' },
-            { name: '90/90 Hip Internal Rotations', prescription: '8 slow switches per side' },
-            { name: 'Band Pull-Aparts (Shoulder Prep)', prescription: '2 x 15 reps' },
-          ],
-          exercises: [
-            {
-              name: 'Barbell Hip Thrust (Peak Pause)',
-              muscle: 'Upper & Max Glutes',
-              cue: 'Drive through heels, tuck ribs down, pause 1.5s at full lockout.',
-              tempo: '2-1-1-1',
-              restSeconds: 120,
-              setsCount: 4,
-              targetReps: 10,
-              suggestedWeightKg: w(70),
-            },
-            {
-              name: 'Dumbbell Romanian Deadlift',
-              muscle: 'Glutes & Hamstrings',
-              cue: 'Push hips straight back until shins stay vertical; stretch glute shelf.',
-              tempo: '3-1-1-0',
-              restSeconds: 90,
-              setsCount: 3,
-              targetReps: 12,
-              suggestedWeightKg: w(16),
-            },
-            {
-              name: 'Cable Lateral Raise (Cuff)',
-              muscle: 'Lateral Deltoids',
-              cue: 'Sweep arm out in scapular plane to create crisp shoulder-to-waist taper.',
-              tempo: '2-1-1-0',
-              restSeconds: 60,
-              setsCount: 4,
-              targetReps: 15,
-              suggestedWeightKg: 5,
-            },
-            {
-              name: '45° Glute-Biased Back Extension',
-              muscle: 'Upper Glutes',
-              cue: 'Round upper spine slightly, flare toes 30°, squeeze glutes without hyperextending.',
-              tempo: '2-1-1-0',
-              restSeconds: 60,
-              setsCount: 3,
-              targetReps: 15,
-              suggestedWeightKg: w(10),
-            },
-          ],
-        },
-        {
-          dayIndex: 1,
-          dayLabel: 'Tue',
-          title: 'Day 2: Upper Taper, Back & TVA Core',
-          targetMuscle: 'Lats, Delts & Deep Core',
-          durationMin: 50,
-          isRestDay: false,
-          warmupTitle: '5-Min Thoracic & Scapular Priming',
-          warmupDrills: [
-            { name: 'Open-Book Thoracic Rotations', prescription: '8 per side' },
-            { name: 'Scapular Pull-Downs', prescription: '2 x 12 slow depress-and-hold' },
-            { name: 'Diaphragmatic Vacuum Breaths', prescription: '3 x 20s holds' },
-          ],
-          exercises: [
-            {
-              name: 'Wide-Grip Neutral Lat Pulldown',
-              muscle: 'Latissimus Dorsi',
-              cue: 'Drive elbows toward hips to widen upper silhouette; zero shoulder shrug.',
-              tempo: '3-1-1-0',
-              restSeconds: 90,
-              setsCount: 4,
-              targetReps: 12,
-              suggestedWeightKg: w(35),
-            },
-            {
-              name: 'Seated Dumbbell Shoulder Press',
-              muscle: 'Anterior & Side Delts',
-              cue: 'Keep elbows slightly tucked forward; press smoothly without lower-back arch.',
-              tempo: '2-1-1-0',
-              restSeconds: 90,
-              setsCount: 3,
-              targetReps: 12,
-              suggestedWeightKg: w(10),
-            },
-            {
-              name: 'Chest-Supported Cable Row',
-              muscle: 'Mid-Back & Rear Delts',
-              cue: 'Pull smoothly toward mid-ribcage and hold shoulder blades pinched 1s.',
-              tempo: '2-1-1-0',
-              restSeconds: 60,
-              setsCount: 3,
-              targetReps: 14,
-              suggestedWeightKg: w(27.5),
-            },
-            {
-              name: 'Dead Bug + Stomach Vacuum',
-              muscle: 'Transverse Abdominis',
-              cue: 'Zero bulky oblique twist; keep lower back glued to mat on every reach.',
-              tempo: '3-1-2-0',
-              restSeconds: 60,
-              setsCount: 3,
-              targetReps: 12,
-              suggestedWeightKg: 0,
-            },
-          ],
-        },
-        {
-          dayIndex: 2,
-          dayLabel: 'Wed',
-          title: 'Day 3: Glute Medius & Unilateral Legs',
-          targetMuscle: 'Upper Shelf & Quads',
-          durationMin: 55,
-          isRestDay: false,
-          warmupTitle: '5-Min Single-Leg & Ankle Mobility Prep',
-          warmupDrills: [
-            { name: 'Banded Seated Hip Abductions', prescription: '2 x 25 rapid pulses' },
-            { name: 'Knee-to-Wall Ankle Dorsiflexion', prescription: '10 per side' },
-            { name: 'Bodyweight Split Squat Hold', prescription: '20s each leg' },
-          ],
-          exercises: [
-            {
-              name: 'Glute-Biased Bulgarian Split Squat',
-              muscle: 'Glutes & Quads',
-              cue: 'Slight forward torso lean, long stance, drive through front heel.',
-              tempo: '3-1-1-0',
-              restSeconds: 90,
-              setsCount: 3,
-              targetReps: 10,
-              suggestedWeightKg: w(12.5),
-            },
-            {
-              name: 'Cable Glute Kickback (30° Angle)',
-              muscle: 'Glute Max & Medius',
-              cue: 'Kick back at 30° outward angle; keep pelvis locked square.',
-              tempo: '2-1-1-1',
-              restSeconds: 60,
-              setsCount: 3,
-              targetReps: 15,
-              suggestedWeightKg: w(12.5),
-            },
-            {
-              name: 'Seated Hip Abduction Machine',
-              muscle: 'Glute Medius Shelf',
-              cue: 'Lean slightly forward off backrest; control return for 2 full seconds.',
-              tempo: '2-1-2-0',
-              restSeconds: 60,
-              setsCount: 4,
-              targetReps: 18,
-              suggestedWeightKg: w(45),
-            },
-            {
-              name: 'Lying Hamstring Curl',
-              muscle: 'Hamstrings',
-              cue: 'Keep hips pressed flat into bench; squeeze 1s at peak flexion.',
-              tempo: '3-1-1-0',
-              restSeconds: 60,
-              setsCount: 3,
-              targetReps: 12,
-              suggestedWeightKg: w(25),
-            },
-          ],
-        },
-        {
-          dayIndex: 3,
-          dayLabel: 'Thu',
-          title: 'Day 4: Active Recovery & Posture Flow',
-          targetMuscle: 'Mobility & Zone-2 Walk',
-          durationMin: 30,
-          isRestDay: true,
-          warmupTitle: '5-Min Fascial Decompression',
-          warmupDrills: [
-            { name: 'Cat-Cow Spinal Wave', prescription: '10 slow breaths' },
-            { name: 'Couch Hip Flexor Stretch', prescription: '45s per side' },
-            { name: 'Wall Angel Shoulder Slides', prescription: '2 x 10 reps' },
-          ],
-          exercises: [
-            {
-              name: 'Incline Treadmill Glute Walk',
-              muscle: 'Aerobic Recovery',
-              cue: '6% incline, brisk pace, upright ribcage to boost blood flow without CNS stress.',
-              tempo: 'Steady',
-              restSeconds: 60,
-              setsCount: 1,
-              targetReps: 25,
-              suggestedWeightKg: 0,
-            },
-            {
-              name: 'Supine TVA Vacuum Series',
-              muscle: 'Deep Core Cincher',
-              cue: 'Exhale completely, draw navel inward toward spine, hold 20s calmly.',
-              tempo: '20s Hold',
-              restSeconds: 60,
-              setsCount: 4,
-              targetReps: 1,
-              suggestedWeightKg: 0,
-            },
-          ],
-        },
-        {
-          dayIndex: 4,
-          dayLabel: 'Fri',
-          title: 'Day 5: Posterior Chain & Shoulder Caps',
-          targetMuscle: 'Glutes, Hamstrings & Delts',
-          durationMin: 55,
-          isRestDay: false,
-          warmupTitle: '5-Min Posterior Activation Sequence',
-          warmupDrills: [
-            { name: 'Single-Leg Glute Bridge March', prescription: '2 x 12 per leg' },
-            { name: 'Banded Good Mornings', prescription: '2 x 15 reps' },
-            { name: 'Light Dumbbell Y-T Raises', prescription: '2 x 10 reps' },
-          ],
-          exercises: [
-            {
-              name: 'Smith Machine Kas Glute Bridge',
-              muscle: 'Glute Max Isolation',
-              cue: 'Short controlled range of motion; keep knees stacked directly over ankles.',
-              tempo: '2-2-1-0',
-              restSeconds: 90,
-              setsCount: 4,
-              targetReps: 12,
-              suggestedWeightKg: w(65),
-            },
-            {
-              name: 'Dumbbell Step-Up (Deficit)',
-              muscle: 'Upper Glutes',
-              cue: 'Minimize push-off from trailing foot; pull yourself up with lead glute.',
-              tempo: '2-1-1-0',
-              restSeconds: 90,
-              setsCount: 3,
-              targetReps: 10,
-              suggestedWeightKg: w(10),
-            },
-            {
-              name: 'Dumbbell Lateral Raise (Drop Set)',
-              muscle: 'Side Deltoids',
-              cue: 'Lead with elbows, keep traps relaxed down away from ears.',
-              tempo: '2-1-1-0',
-              restSeconds: 60,
-              setsCount: 4,
-              targetReps: 15,
-              suggestedWeightKg: w(6),
-            },
-            {
-              name: 'Face Pulls (External Rotation)',
-              muscle: 'Rear Delts & Posture',
-              cue: 'Pull rope toward forehead with thumbs pointing behind you.',
-              tempo: '2-1-1-1',
-              restSeconds: 60,
-              setsCount: 3,
-              targetReps: 15,
-              suggestedWeightKg: w(15),
-            },
-          ],
-        },
-        {
-          dayIndex: 5,
-          dayLabel: 'Sat',
-          title: 'Day 6: Metabolic Sculpt & Waist Line',
-          targetMuscle: 'Full-Body Conditioning & TVA',
-          durationMin: 45,
-          isRestDay: false,
-          warmupTitle: '5-Min Dynamic Rhythm Prep',
-          warmupDrills: [
-            { name: 'World Greatest Stretch', prescription: '6 slow reps per side' },
-            { name: 'Banded Clamshells', prescription: '2 x 20 per side' },
-            { name: 'Arm Circles + Scapular Sweeps', prescription: '30s forward/back' },
-          ],
-          exercises: [
-            {
-              name: 'Sumo Kettlebell Squat',
-              muscle: 'Inner Thighs & Glutes',
-              cue: 'Wide stance, knees track over middle toes, upright chest.',
-              tempo: '3-1-1-0',
-              restSeconds: 60,
-              setsCount: 4,
-              targetReps: 15,
-              suggestedWeightKg: w(20),
-            },
-            {
-              name: 'Incline Dumbbell Press',
-              muscle: 'Upper Chest & Posture',
-              cue: '30° bench angle, control descent to outer chest.',
-              tempo: '3-1-1-0',
-              restSeconds: 60,
-              setsCount: 3,
-              targetReps: 12,
-              suggestedWeightKg: w(10),
-            },
-            {
-              name: 'Single-Arm Cable Row',
-              muscle: 'Lats & Mid-Back',
-              cue: 'Keep torso tall and anti-rotational; pull elbow smoothly past hip.',
-              tempo: '2-1-1-0',
-              restSeconds: 60,
-              setsCount: 3,
-              targetReps: 12,
-              suggestedWeightKg: w(15),
-            },
-            {
-              name: 'Hollow-Body Breath Hold',
-              muscle: 'Deep Core Cincher',
-              cue: 'Press lower back flat into floor; zero oblique crunches.',
-              tempo: '30s Hold',
-              restSeconds: 60,
-              setsCount: 3,
-              targetReps: 1,
-              suggestedWeightKg: 0,
-            },
-          ],
-        },
-        {
-          dayIndex: 6,
-          dayLabel: 'Sun',
-          title: 'Day 7: Complete CNS Reset & Hydration',
-          targetMuscle: 'Rest, Sleep & Step Floor',
-          durationMin: 25,
-          isRestDay: true,
-          warmupTitle: '5-Min Morning Lymphatic Flow',
-          warmupDrills: [
-            { name: 'Pigeon Glute Release', prescription: '60s per side' },
-            { name: 'Thoracic Foam Roller Extension', prescription: '90s gentle glide' },
-            { name: 'Box Breathing Reset', prescription: '4 cycles (4-4-4-4)' },
-          ],
-          exercises: [
-            {
-              name: 'Outdoor Daylight Recovery Walk',
-              muscle: 'Metabolic Baseline',
-              cue: 'Aim for relaxed nasal breathing while banking daily step goal.',
-              tempo: 'Easy Pace',
-              restSeconds: 60,
-              setsCount: 1,
-              targetReps: 30,
-              suggestedWeightKg: 0,
-            },
-          ],
-        },
-      ]);
-    }
-
-    // Athletic & Toned OR Lean & Petite Sculpt
-    const isPetite = goal === 'Lean & Petite Sculpt';
-    return hydrateSplit([
-      {
-        dayIndex: 0,
-        dayLabel: 'Mon',
-        title: isPetite ? 'Day 1: Lower Sculpt & Posture Flow' : 'Day 1: Lower Power & Conditioning',
-        targetMuscle: 'Glutes, Legs & Core',
-        durationMin: 48,
-        isRestDay: false,
-        warmupTitle: '5-Min Hip & Knee Activation',
-        warmupDrills: [
-          { name: 'Lateral Band Walks', prescription: '2 x 15 per side' },
-          { name: 'Glute Bridge Pulses', prescription: '2 x 20 reps' },
-          { name: 'World Greatest Stretch', prescription: '6 per side' },
-        ],
-        exercises: [
-          {
-            name: 'Goblet Squat (Heels Elevated)',
-            muscle: 'Quads & Glutes',
-            cue: 'Stay tall through sternum, sink hips straight between knees.',
-            tempo: '3-1-1-0',
-            restSeconds: 90,
-            setsCount: 4,
-            targetReps: isPetite ? 14 : 12,
-            suggestedWeightKg: w(16),
-          },
-          {
-            name: 'Dumbbell Hip Thrust',
-            muscle: 'Glutes',
-            cue: 'Chin tucked, ribs stacked over pelvis at top lockout.',
-            tempo: '2-1-1-1',
-            restSeconds: 60,
-            setsCount: 4,
-            targetReps: 15,
-            suggestedWeightKg: w(24),
-          },
-          {
-            name: 'Alternating Reverse Lunge',
-            muscle: 'Glutes & Legs',
-            cue: 'Control back knee softly toward floor; drive up through front heel.',
-            tempo: '2-1-1-0',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 12,
-            suggestedWeightKg: w(10),
-          },
-          {
-            name: 'Forearm Plank Shoulder Taps',
-            muscle: 'Deep Core Stability',
-            cue: 'Keep hips completely still while alternating slow hand taps.',
-            tempo: 'Controlled',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 16,
-            suggestedWeightKg: 0,
-          },
-        ],
-      },
-      {
-        dayIndex: 1,
-        dayLabel: 'Tue',
-        title: 'Day 2: Upper Definition & Posture',
-        targetMuscle: 'Shoulders, Back & Arms',
-        durationMin: 45,
-        isRestDay: false,
-        warmupTitle: '5-Min Shoulder & Thoracic Prep',
-        warmupDrills: [
-          { name: 'Band Pull-Aparts', prescription: '2 x 15 reps' },
-          { name: 'Scapular Push-Ups', prescription: '2 x 12 reps' },
-          { name: 'Thoracic Thread-the-Needle', prescription: '8 per side' },
-        ],
-        exercises: [
-          {
-            name: 'Arnold Dumbbell Press',
-            muscle: 'Shoulders',
-            cue: 'Rotate palms smoothly through press; avoid shrugging neck.',
-            tempo: '2-1-1-0',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 12,
-            suggestedWeightKg: w(8),
-          },
-          {
-            name: 'Cable Lat Pulldown',
-            muscle: 'Back & Posture',
-            cue: 'Pull bar to collarbone with open chest.',
-            tempo: '2-1-1-0',
-            restSeconds: 60,
-            setsCount: 4,
-            targetReps: 12,
-            suggestedWeightKg: w(30),
-          },
-          {
-            name: 'Dumbbell Lateral Raise',
-            muscle: 'Side Delts',
-            cue: 'Soft bend in elbows, stop at shoulder height.',
-            tempo: '2-1-1-0',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 15,
-            suggestedWeightKg: w(5),
-          },
-          {
-            name: 'Rope Tricep Pushdown',
-            muscle: 'Triceps',
-            cue: 'Pin elbows to ribs and split rope cleanly at bottom.',
-            tempo: '2-1-1-0',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 15,
-            suggestedWeightKg: w(15),
-          },
-        ],
-      },
-      {
-        dayIndex: 2,
-        dayLabel: 'Wed',
-        title: isPetite ? 'Day 3: Calorie-Torch Sculpt Circuit' : 'Day 3: Metabolic Conditioning',
-        targetMuscle: 'Full-Body Lean Tone',
-        durationMin: 42,
-        isRestDay: false,
-        warmupTitle: '5-Min Pulse & Mobility Primer',
-        warmupDrills: [
-          { name: 'Inchworm Walkouts', prescription: '8 slow reps' },
-          { name: 'Bodyweight Squat-to-Reach', prescription: '12 reps' },
-          { name: 'Light High-Knee March', prescription: '45 seconds' },
-        ],
-        exercises: [
-          {
-            name: 'Kettlebell Swing',
-            muscle: 'Posterior Chain & Cardio',
-            cue: 'Snap hips crisply forward; bell floats from hip drive, not arms.',
-            tempo: 'Explosive',
-            restSeconds: 60,
-            setsCount: 4,
-            targetReps: 20,
-            suggestedWeightKg: w(14),
-          },
-          {
-            name: 'Dumbbell Thruster',
-            muscle: 'Full-Body Conditioning',
-            cue: 'Use squat momentum directly into clean overhead lockout.',
-            tempo: 'Athletic',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 12,
-            suggestedWeightKg: w(8),
-          },
-          {
-            name: 'TRX / Inverted Body Row',
-            muscle: 'Upper Back & Core',
-            cue: 'Keep body rigid like a plank while pulling chest to handles.',
-            tempo: '2-1-1-0',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 12,
-            suggestedWeightKg: 0,
-          },
-        ],
-      },
-      {
-        dayIndex: 3,
-        dayLabel: 'Thu',
-        title: 'Day 4: Active Recovery & Step Push',
-        targetMuscle: 'Posture & Zone-2 Walk',
-        durationMin: 30,
-        isRestDay: true,
-        warmupTitle: '5-Min Mobility Reset',
-        warmupDrills: [
-          { name: 'Hip 90/90 Flow', prescription: '8 transitions' },
-          { name: 'Chest Opener Doorway Stretch', prescription: '45s' },
-          { name: 'Deep Nasal Breathing', prescription: '2 minutes' },
-        ],
-        exercises: [
-          {
-            name: 'Brisk Outdoor Step Session',
-            muscle: 'NEAT & Recovery',
-            cue: 'Maintain rhythmic arm swing and relaxed shoulders.',
-            tempo: 'Steady',
-            restSeconds: 60,
-            setsCount: 1,
-            targetReps: 30,
-            suggestedWeightKg: 0,
-          },
-        ],
-      },
-      {
-        dayIndex: 4,
-        dayLabel: 'Fri',
-        title: 'Day 5: Glute & Hamstring Sculpt',
-        targetMuscle: 'Posterior Chain',
-        durationMin: 50,
-        isRestDay: false,
-        warmupTitle: '5-Min Hinge & Glute Activation',
-        warmupDrills: [
-          { name: 'Single-Leg Glute Bridge', prescription: '2 x 12 per leg' },
-          { name: 'Banded Clamshells', prescription: '2 x 18 per side' },
-          { name: 'Bodyweight Good Mornings', prescription: '15 reps' },
-        ],
-        exercises: [
-          {
-            name: 'Romanian Deadlift',
-            muscle: 'Hamstrings & Glutes',
-            cue: 'Hinge hips back slowly; stop as soon as hips stop traveling backward.',
-            tempo: '3-1-1-0',
-            restSeconds: 90,
-            setsCount: 4,
-            targetReps: 12,
-            suggestedWeightKg: w(14),
-          },
-          {
-            name: 'Walking Dumbbell Lunge',
-            muscle: 'Glutes & Quads',
-            cue: 'Long stride, steady upright torso, smooth push through front foot.',
-            tempo: '2-0-1-0',
-            restSeconds: 90,
-            setsCount: 3,
-            targetReps: 12,
-            suggestedWeightKg: w(10),
-          },
-          {
-            name: 'Cable Kickbacks',
-            muscle: 'Upper Glutes',
-            cue: 'Pause 1s at peak extension with zero lower-back arch.',
-            tempo: '2-1-1-1',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 15,
-            suggestedWeightKg: w(10),
-          },
-        ],
-      },
-      {
-        dayIndex: 5,
-        dayLabel: 'Sat',
-        title: 'Day 6: Athletic Core & Upper Flow',
-        targetMuscle: 'Upper Body & Deep Core',
-        durationMin: 45,
-        isRestDay: false,
-        warmupTitle: '5-Min Dynamic Shoulder Flow',
-        warmupDrills: [
-          { name: 'Wall Slides', prescription: '2 x 12 reps' },
-          { name: 'Bird-Dog Core Reach', prescription: '10 per side' },
-          { name: 'Light Band External Rotations', prescription: '15 per arm' },
-        ],
-        exercises: [
-          {
-            name: 'Incline Push-Up / Chest Press',
-            muscle: 'Chest & Arms',
-            cue: 'Elbows at 45°, control descent for crisp upper-body tone.',
-            tempo: '3-1-1-0',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 12,
-            suggestedWeightKg: w(10),
-          },
-          {
-            name: 'Single-Arm Dumbbell Row',
-            muscle: 'Back & Posture',
-            cue: 'Pull elbow smoothly toward hip pocket.',
-            tempo: '2-1-1-0',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 12,
-            suggestedWeightKg: w(12.5),
-          },
-          {
-            name: 'Pilates-Style Leg Lowering',
-            muscle: 'Lower Abs & TVA',
-            cue: 'Keep lower spine anchored to mat through entire range.',
-            tempo: '3-1-1-0',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 14,
-            suggestedWeightKg: 0,
-          },
-        ],
-      },
-      {
-        dayIndex: 6,
-        dayLabel: 'Sun',
-        title: 'Day 7: Full Recovery & Sleep Bank',
-        targetMuscle: 'Rest & Mobility',
-        durationMin: 20,
-        isRestDay: true,
-        warmupTitle: '5-Min Restorative Stretch',
-        warmupDrills: [
-          { name: 'Child Pose Lat Reach', prescription: '60s' },
-          { name: 'Supine Spinal Twist', prescription: '45s per side' },
-          { name: 'Slow Nasal Recovery Breaths', prescription: '3 minutes' },
-        ],
-        exercises: [
-          {
-            name: 'Evening Decompression Walk',
-            muscle: 'Active Rest',
-            cue: 'Unplug, keep pace easy, prepare CNS for 8.5h deep sleep.',
-            tempo: 'Easy',
-            restSeconds: 60,
-            setsCount: 1,
-            targetReps: 20,
-            suggestedWeightKg: 0,
-          },
-        ],
-      },
-    ]);
-  }
-
-  // Male Splits
-  if (goal === 'V-Taper Aesthetic') {
-    return hydrateSplit([
-      {
-        dayIndex: 0,
-        dayLabel: 'Mon',
-        title: 'Day 1: Upper Chest Shelf & Wide Lats',
-        targetMuscle: 'Upper Chest & Lats',
-        durationMin: 60,
-        isRestDay: false,
-        warmupTitle: '5-Min Upper Thoracic & Cuff Activation',
-        warmupDrills: [
-          { name: 'Band Pull-Aparts', prescription: '2 x 15 reps' },
-          { name: 'Cable External Rotations', prescription: '2 x 12 per arm' },
-          { name: 'Thoracic Bench Extensions', prescription: '10 slow reps' },
-          { name: 'Scapular Pull-Ups', prescription: '2 x 10 reps' },
-        ],
-        exercises: [
-          {
-            name: 'Incline Dumbbell Press (30°)',
-            muscle: 'Clavicular Upper Chest',
-            cue: 'Control 3s eccentric to deep stretch; drive elbows slightly inward on press.',
-            tempo: '3-1-1-0',
-            restSeconds: 120,
-            setsCount: 4,
-            targetReps: 10,
-            suggestedWeightKg: w(30),
-          },
-          {
-            name: 'Wide-Grip Weighted Pull-Up / Pulldown',
-            muscle: 'Lat Width',
-            cue: 'Depress shoulders first, pull chest toward bar for maximum V-taper flare.',
-            tempo: '2-1-1-1',
-            restSeconds: 90,
-            setsCount: 4,
-            targetReps: 10,
-            suggestedWeightKg: w(65),
-          },
-          {
-            name: 'Single-Arm Iliac Cable Pulldown',
-            muscle: 'Lower Lat Sweep',
-            cue: 'Sit tall, drive elbow downward into hip pocket without torso sway.',
-            tempo: '2-1-2-0',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 12,
-            suggestedWeightKg: w(30),
-          },
-          {
-            name: 'Low-to-High Cable Chest Fly',
-            muscle: 'Upper Pecs',
-            cue: 'Sweep hands upward toward collarbone height and hold 1s peak squeeze.',
-            tempo: '2-1-1-1',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 14,
-            suggestedWeightKg: w(15),
-          },
-        ],
-      },
-      {
-        dayIndex: 1,
-        dayLabel: 'Tue',
-        title: 'Day 2: 3D Capped Delts & Arms',
-        targetMuscle: 'Side Delts, Rear Delts & Arms',
-        durationMin: 55,
-        isRestDay: false,
-        warmupTitle: '5-Min Shoulder Capsule & Elbow Prep',
-        warmupDrills: [
-          { name: 'Light Band Dislocates', prescription: '2 x 12 reps' },
-          { name: 'Prone Y-T-W Raises', prescription: '2 x 10 each' },
-          { name: 'Light Rope Pressdowns', prescription: '2 x 15 pump reps' },
-        ],
-        exercises: [
-          {
-            name: 'Seated Overhead Dumbbell Press',
-            muscle: 'Anterior & Medial Delts',
-            cue: 'Stack wrists over elbows; stop just shy of lockout to keep tension on delts.',
-            tempo: '2-1-1-0',
-            restSeconds: 90,
-            setsCount: 4,
-            targetReps: 10,
-            suggestedWeightKg: w(24),
-          },
-          {
-            name: 'Behind-the-Back Cable Lateral Raise',
-            muscle: '3D Side Deltoids',
-            cue: 'Set pulley at wrist height; sweep outward for maximum stretched-position tension.',
-            tempo: '2-1-2-0',
-            restSeconds: 60,
-            setsCount: 4,
-            targetReps: 15,
-            suggestedWeightKg: w(7.5),
-          },
-          {
-            name: 'Reverse Pec-Deck Rear Delt Fly',
-            muscle: 'Posterior Delts',
-            cue: 'Push handles outward toward walls rather than pinching mid-back.',
-            tempo: '2-1-1-1',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 15,
-            suggestedWeightKg: w(40),
-          },
-          {
-            name: 'Incline Dumbbell Curl + Rope Pushdown',
-            muscle: 'Biceps & Triceps',
-            cue: 'Keep upper arms pinned motionless behind torso on curls.',
-            tempo: '3-1-1-0',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 12,
-            suggestedWeightKg: w(14),
-          },
-        ],
-      },
-      {
-        dayIndex: 2,
-        dayLabel: 'Wed',
-        title: 'Day 3: Lower Quad Sweep & Tight Core',
-        targetMuscle: 'Quads, Hamstrings & TVA',
-        durationMin: 55,
-        isRestDay: false,
-        warmupTitle: '5-Min Knee, Hip & Ankle Mobility',
-        warmupDrills: [
-          { name: '90/90 Hip Switches', prescription: '10 controlled reps' },
-          { name: 'Ankle Dorsiflexion Rocks', prescription: '12 per side' },
-          { name: 'Bodyweight Tempo Squats', prescription: '2 x 10 with 3s pause' },
-        ],
-        exercises: [
-          {
-            name: 'Hack Squat / Heel-Elevated Squat',
-            muscle: 'Quadriceps Sweep',
-            cue: 'Drive knees smoothly forward over toes; control bottom 2s without bounce.',
-            tempo: '3-1-1-0',
-            restSeconds: 120,
-            setsCount: 4,
-            targetReps: 10,
-            suggestedWeightKg: w(90),
-          },
-          {
-            name: 'Seated Leg Curl',
-            muscle: 'Hamstrings',
-            cue: 'Lock lap pad tight; drive heels explosively back and resist 3s up.',
-            tempo: '3-1-1-0',
-            restSeconds: 90,
-            setsCount: 3,
-            targetReps: 12,
-            suggestedWeightKg: w(50),
-          },
-          {
-            name: 'Standing Calf Raise (Full Pause)',
-            muscle: 'Calves',
-            cue: '2s pause at bottom stretch every rep — zero bouncing.',
-            tempo: '2-2-1-1',
-            restSeconds: 60,
-            setsCount: 4,
-            targetReps: 15,
-            suggestedWeightKg: w(60),
-          },
-          {
-            name: 'Hanging Leg Raise (Controlled)',
-            muscle: 'Lower Abs (No Waist Thickening)',
-            cue: 'Curl pelvis upward toward ribs; zero swinging.',
-            tempo: '2-1-2-0',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 12,
-            suggestedWeightKg: 0,
-          },
-        ],
-      },
-      {
-        dayIndex: 3,
-        dayLabel: 'Thu',
-        title: 'Day 4: CNS Recovery & Zone-2 Conditioning',
-        targetMuscle: 'Active Recovery',
-        durationMin: 30,
-        isRestDay: true,
-        warmupTitle: '5-Min Thoracic & Hip Decompression',
-        warmupDrills: [
-          { name: 'Dead Hang Lat Stretch', prescription: '2 x 30s' },
-          { name: 'Couch Quad/Hip Stretch', prescription: '45s per side' },
-          { name: 'Thoracic Foam Roll', prescription: '90 seconds' },
-        ],
-        exercises: [
-          {
-            name: 'Incline Zone-2 Conditioning Walk',
-            muscle: 'Aerobic Base',
-            cue: 'Keep heart rate steady around 125–135 bpm to accelerate glycogen recovery.',
-            tempo: 'Steady',
-            restSeconds: 60,
-            setsCount: 1,
-            targetReps: 30,
-            suggestedWeightKg: 0,
-          },
-        ],
-      },
-      {
-        dayIndex: 4,
-        dayLabel: 'Fri',
-        title: 'Day 5: Back Thickness, Width & Lateral Delts',
-        targetMuscle: 'Lats, Upper Back & Side Delts',
-        durationMin: 58,
-        isRestDay: false,
-        warmupTitle: '5-Min Scapular & Lat Activation',
-        warmupDrills: [
-          { name: 'Straight-Arm Cable Pulldown', prescription: '2 x 15 light reps' },
-          { name: 'Face Pulls', prescription: '2 x 15 reps' },
-          { name: 'Cat-Cow Thoracic Mobilizer', prescription: '10 reps' },
-        ],
-        exercises: [
-          {
-            name: 'Chest-Supported T-Bar Row',
-            muscle: 'Mid-Back & Traps',
-            cue: 'Let shoulders protract cleanly at bottom, drive elbows back hard.',
-            tempo: '2-1-1-1',
-            restSeconds: 90,
-            setsCount: 4,
-            targetReps: 10,
-            suggestedWeightKg: w(55),
-          },
-          {
-            name: 'Neutral-Grip Lat Pulldown',
-            muscle: 'Lower & Outer Lats',
-            cue: 'Pull elbows vertically down into sides with upright sternum.',
-            tempo: '3-1-1-0',
-            restSeconds: 90,
-            setsCount: 3,
-            targetReps: 12,
-            suggestedWeightKg: w(60),
-          },
-          {
-            name: 'Dumbbell Lateral Raise (Heavy + Partial)',
-            muscle: 'Lateral Deltoids',
-            cue: 'Lead with pinkies level, control every descent.',
-            tempo: '2-1-1-0',
-            restSeconds: 60,
-            setsCount: 4,
-            targetReps: 15,
-            suggestedWeightKg: w(12.5),
-          },
-          {
-            name: 'Cable Face Pulls',
-            muscle: 'Rear Delts & Rotators',
-            cue: 'Pull toward bridge of nose and hold external rotation 1s.',
-            tempo: '2-1-1-1',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 15,
-            suggestedWeightKg: w(22.5),
-          },
-        ],
-      },
-      {
-        dayIndex: 5,
-        dayLabel: 'Sat',
-        title: 'Day 6: Upper Shelf, Arms & Vacuum Core',
-        targetMuscle: 'Upper Chest, Arms & Core',
-        durationMin: 52,
-        isRestDay: false,
-        warmupTitle: '5-Min Press & Joint Prep',
-        warmupDrills: [
-          { name: 'Band External Rotations', prescription: '2 x 12 per arm' },
-          { name: 'Scapular Push-Ups', prescription: '2 x 12 reps' },
-          { name: 'Light Hammer Curls', prescription: '15 warm-up reps' },
-        ],
-        exercises: [
-          {
-            name: 'Incline Smith Bench Press',
-            muscle: 'Upper Chest Shelf',
-            cue: 'Touch bar cleanly to upper sternum; drive straight up.',
-            tempo: '3-1-1-0',
-            restSeconds: 90,
-            setsCount: 4,
-            targetReps: 10,
-            suggestedWeightKg: w(65),
-          },
-          {
-            name: 'EZ-Bar Preacher Curl',
-            muscle: 'Biceps Peak',
-            cue: 'Full elbow extension without snapping joint at bottom.',
-            tempo: '3-1-1-0',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 12,
-            suggestedWeightKg: w(30),
-          },
-          {
-            name: 'Overhead Cable Tricep Extension',
-            muscle: 'Tricep Long Head',
-            cue: 'Deep stretch behind head every rep for full arm thickness.',
-            tempo: '3-1-1-0',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 12,
-            suggestedWeightKg: w(25),
-          },
-          {
-            name: 'Cable Crunch + Vacuum Set',
-            muscle: 'Abdominal Wall',
-            cue: 'Flex thoracic spine downward without hip hinging.',
-            tempo: '2-1-2-0',
-            restSeconds: 60,
-            setsCount: 3,
-            targetReps: 15,
-            suggestedWeightKg: w(35),
-          },
-        ],
-      },
-      {
-        dayIndex: 6,
-        dayLabel: 'Sun',
-        title: 'Day 7: Complete CNS Recovery',
-        targetMuscle: 'Sleep & Step Floor',
-        durationMin: 25,
-        isRestDay: true,
-        warmupTitle: '5-Min Full-Body Mobility Reset',
-        warmupDrills: [
-          { name: 'World Greatest Stretch', prescription: '6 per side' },
-          { name: 'Pec Doorway Stretch', prescription: '45s per side' },
-          { name: 'Box Breathing', prescription: '4 cycles' },
-        ],
-        exercises: [
-          {
-            name: 'Sunlight Step Walk',
-            muscle: 'Recovery & Circulation',
-            cue: 'Hit step floor effortlessly and lock in 8.0h deep sleep tonight.',
-            tempo: 'Easy',
-            restSeconds: 60,
-            setsCount: 1,
-            targetReps: 25,
-            suggestedWeightKg: 0,
-          },
-        ],
-      },
-    ]);
-  }
-
-  // Hypertrophy & Mass OR Athletic Shred
-  const isShred = goal === 'Athletic Shred';
-  return hydrateSplit([
-    {
-      dayIndex: 0,
-      dayLabel: 'Mon',
-      title: isShred ? 'Day 1: Explosive Push & Conditioning' : 'Day 1: Heavy Push & Mechanical Tension',
-      targetMuscle: 'Chest, Shoulders & Triceps',
-      durationMin: 58,
-      isRestDay: false,
-      warmupTitle: '5-Min Pressing Joint & Cuff Primer',
-      warmupDrills: [
-        { name: 'Band Pull-Aparts', prescription: '2 x 15 reps' },
-        { name: 'Scapular Push-Ups', prescription: '2 x 12 reps' },
-        { name: 'Cable External Rotations', prescription: '12 per arm' },
-      ],
-      exercises: [
-        {
-          name: 'Barbell Bench Press',
-          muscle: 'Chest & Front Delts',
-          cue: 'Plant feet hard, retract scapulae, lower to mid-sternum with control.',
-          tempo: '3-1-1-0',
-          restSeconds: 120,
-          setsCount: 4,
-          targetReps: isShred ? 10 : 8,
-          suggestedWeightKg: w(75),
-        },
-        {
-          name: 'Incline Dumbbell Press',
-          muscle: 'Upper Chest',
-          cue: 'Deep stretch at bottom, press cleanly without flaring elbows.',
-          tempo: '3-1-1-0',
-          restSeconds: 90,
-          setsCount: 3,
-          targetReps: 10,
-          suggestedWeightKg: w(28),
-        },
-        {
-          name: 'Dumbbell Lateral Raise',
-          muscle: 'Side Deltoids',
-          cue: 'Control eccentric for 2 seconds on every rep.',
-          tempo: '2-1-2-0',
-          restSeconds: 60,
-          setsCount: 4,
-          targetReps: 15,
-          suggestedWeightKg: w(12.5),
-        },
-        {
-          name: 'Weighted Dips / Rope Pushdown',
-          muscle: 'Triceps & Lower Chest',
-          cue: 'Keep shoulders depressed down away from ears.',
-          tempo: '2-1-1-0',
-          restSeconds: 60,
-          setsCount: 3,
-          targetReps: 12,
-          suggestedWeightKg: w(25),
-        },
-      ],
-    },
-    {
-      dayIndex: 1,
-      dayLabel: 'Tue',
-      title: 'Day 2: Heavy Pull & Posterior Thickness',
-      targetMuscle: 'Lats, Mid-Back & Biceps',
-      durationMin: 56,
-      isRestDay: false,
-      warmupTitle: '5-Min Lat & Rear Delt Activation',
-      warmupDrills: [
-        { name: 'Dead Hang Scapular Pulls', prescription: '2 x 10 reps' },
-        { name: 'Band Face Pulls', prescription: '2 x 15 reps' },
-        { name: 'Thoracic Openers', prescription: '8 per side' },
-      ],
-      exercises: [
-        {
-          name: 'Pendlay / Barbell Bent Row',
-          muscle: 'Back Thickness',
-          cue: 'Brace core hard, pull bar cleanly to lower ribcage.',
-          tempo: '2-1-1-0',
-          restSeconds: 120,
-          setsCount: 4,
-          targetReps: 8,
-          suggestedWeightKg: w(70),
-        },
-        {
-          name: 'Lat Pulldown (Wide Overhand)',
-          muscle: 'Latissimus Dorsi',
-          cue: 'Drive elbows straight down toward hips.',
-          tempo: '3-1-1-0',
-          restSeconds: 90,
-          setsCount: 3,
-          targetReps: 12,
-          suggestedWeightKg: w(60),
-        },
-        {
-          name: 'Seated Cable Row',
-          muscle: 'Rhomboids & Traps',
-          cue: 'Pause 1s with chest proud at full contraction.',
-          tempo: '2-1-1-0',
-          restSeconds: 60,
-          setsCount: 3,
-          targetReps: 12,
-          suggestedWeightKg: w(55),
-        },
-        {
-          name: 'Barbell / EZ-Bar Curl',
-          muscle: 'Biceps',
-          cue: 'Keep elbows stationary beside ribs.',
-          tempo: '2-1-2-0',
-          restSeconds: 60,
-          setsCount: 3,
-          targetReps: 12,
-          suggestedWeightKg: w(30),
-        },
-      ],
-    },
-    {
-      dayIndex: 2,
-      dayLabel: 'Wed',
-      title: isShred ? 'Day 3: Power Legs & MetCon' : 'Day 3: Lower Mass & Posterior Drive',
-      targetMuscle: 'Quads, Hamstrings & Glutes',
-      durationMin: 60,
-      isRestDay: false,
-      warmupTitle: '5-Min Lower-Body Mobility & Brace',
-      warmupDrills: [
-        { name: '90/90 Hip Capsule Flow', prescription: '8 switches' },
-        { name: 'Cossack Squat Shifts', prescription: '10 total' },
-        { name: 'Goblet Squat Bottom Hold', prescription: '2 x 20s' },
-      ],
-      exercises: [
-        {
-          name: 'Barbell Back Squat',
-          muscle: 'Quads & Glutes',
-          cue: '360° diaphragmatic brace, knees track toes, explosive ascent.',
-          tempo: '3-1-1-0',
-          restSeconds: 120,
-          setsCount: 4,
-          targetReps: 8,
-          suggestedWeightKg: w(95),
-        },
-        {
-          name: 'Romanian Deadlift',
-          muscle: 'Hamstrings & Glutes',
-          cue: 'Shave thighs with bar, push hips straight back.',
-          tempo: '3-1-1-0',
-          restSeconds: 90,
-          setsCount: 3,
-          targetReps: 10,
-          suggestedWeightKg: w(80),
-        },
-        {
-          name: 'Leg Press (Controlled)',
-          muscle: 'Quads',
-          cue: 'Full knee flexion without lower back peeling off pad.',
-          tempo: '3-1-1-0',
-          restSeconds: 90,
-          setsCount: 3,
-          targetReps: 12,
-          suggestedWeightKg: w(150),
-        },
-        {
-          name: 'Standing Calf Raise',
-          muscle: 'Calves',
-          cue: 'Full 2s stretch at bottom of every repetition.',
-          tempo: '2-2-1-1',
-          restSeconds: 60,
-          setsCount: 4,
-          targetReps: 15,
-          suggestedWeightKg: w(60),
-        },
-      ],
-    },
-    {
-      dayIndex: 3,
-      dayLabel: 'Thu',
-      title: 'Day 4: Active Recovery & Mobility',
-      targetMuscle: 'CNS & Joint Recovery',
-      durationMin: 30,
-      isRestDay: true,
-      warmupTitle: '5-Min Full-Body Release',
-      warmupDrills: [
-        { name: 'Thoracic Extensions', prescription: '12 reps' },
-        { name: 'Hip Flexor Stretch', prescription: '45s per side' },
-        { name: 'Nasal Breathing Reset', prescription: '3 minutes' },
-      ],
-      exercises: [
-        {
-          name: 'Zone-2 Incline Walk / Bike',
-          muscle: 'Cardiovascular Recovery',
-          cue: 'Conversational pace to drive blood flow into sore muscle fibers.',
-          tempo: 'Steady',
-          restSeconds: 60,
-          setsCount: 1,
-          targetReps: 25,
-          suggestedWeightKg: 0,
-        },
-      ],
-    },
-    {
-      dayIndex: 4,
-      dayLabel: 'Fri',
-      title: 'Day 5: Upper Volume & Shoulder Armor',
-      targetMuscle: 'Chest, Back & Delts',
-      durationMin: 56,
-      isRestDay: false,
-      warmupTitle: '5-Min Upper Joint Prep',
-      warmupDrills: [
-        { name: 'Band Pull-Aparts', prescription: '2 x 15' },
-        { name: 'Shoulder Dislocates', prescription: '12 reps' },
-        { name: 'Push-Up Plus', prescription: '12 reps' },
-      ],
-      exercises: [
-        {
-          name: 'Overhead Barbell / Dumbbell Press',
-          muscle: 'Shoulders & Triceps',
-          cue: 'Squeeze glutes and brace abs tight; press straight vertical path.',
-          tempo: '2-1-1-0',
-          restSeconds: 90,
-          setsCount: 4,
-          targetReps: 8,
-          suggestedWeightKg: w(50),
-        },
-        {
-          name: 'Weighted Chin-Up / Underhand Pulldown',
-          muscle: 'Lats & Biceps',
-          cue: 'Pull collarbones to bar, control 3s lowering.',
-          tempo: '3-1-1-0',
-          restSeconds: 90,
-          setsCount: 3,
-          targetReps: 10,
-          suggestedWeightKg: w(65),
-        },
-        {
-          name: 'Cable Chest Fly',
-          muscle: 'Pectorals',
-          cue: 'Hug wide arc, hold 1s contraction at center.',
-          tempo: '2-1-1-1',
-          restSeconds: 60,
-          setsCount: 3,
-          targetReps: 14,
-          suggestedWeightKg: w(15),
-        },
-      ],
-    },
-    {
-      dayIndex: 5,
-      dayLabel: 'Sat',
-      title: isShred ? 'Day 6: Athletic Conditioning & Core' : 'Day 6: Arms, Rear Delts & Core',
-      targetMuscle: 'Arms, Core & Conditioning',
-      durationMin: 50,
-      isRestDay: false,
-      warmupTitle: '5-Min Elbow & Core Primer',
-      warmupDrills: [
-        { name: 'Dead Bug Brace', prescription: '12 slow reps' },
-        { name: 'Light Band Curls & Pressdowns', prescription: '2 x 15' },
-        { name: 'World Greatest Stretch', prescription: '6 per side' },
-      ],
-      exercises: [
-        {
-          name: isShred ? 'Kettlebell Complex (Clean + Press)' : 'Hammer Dumbbell Curl',
-          muscle: isShred ? 'Full-Body Power' : 'Brachialis & Forearms',
-          cue: 'Explosive hip snap, crisp lockout, zero lower-back sway.',
-          tempo: '2-1-1-0',
-          restSeconds: 60,
-          setsCount: 4,
-          targetReps: 12,
-          suggestedWeightKg: w(16),
-        },
-        {
-          name: 'Skullcrusher / Overhead Extension',
-          muscle: 'Triceps',
-          cue: 'Keep elbows pointed straight forward throughout descent.',
-          tempo: '3-1-1-0',
-          restSeconds: 60,
-          setsCount: 3,
-          targetReps: 12,
-          suggestedWeightKg: w(27.5),
-        },
-        {
-          name: 'Ab-Wheel / Hanging Knee Raise',
-          muscle: 'Core Definition',
-          cue: 'Keep ribs tucked toward pelvis; never sag lower spine.',
-          tempo: '2-1-2-0',
-          restSeconds: 60,
-          setsCount: 3,
-          targetReps: 12,
-          suggestedWeightKg: 0,
-        },
-      ],
-    },
-    {
-      dayIndex: 6,
-      dayLabel: 'Sun',
-      title: 'Day 7: Complete CNS Rest & Recovery',
-      targetMuscle: 'Sleep & Mobility',
-      durationMin: 20,
-      isRestDay: true,
-      warmupTitle: '5-Min Mobility Wind-Down',
-      warmupDrills: [
-        { name: 'Pigeon Hip Opener', prescription: '60s per side' },
-        { name: 'Wall Chest Stretch', prescription: '45s per side' },
-        { name: 'Box Breathing', prescription: '4 cycles' },
-      ],
-      exercises: [
-        {
-          name: 'Recovery Walk',
-          muscle: 'Active Rest',
-          cue: 'Easy outdoor steps to clear metabolic fatigue before Monday.',
-          tempo: 'Easy',
-          restSeconds: 60,
-          setsCount: 1,
-          targetReps: 25,
-          suggestedWeightKg: 0,
-        },
-      ],
-    },
-  ]);
+export function buildFallbackSplit(
+  gender: Gender,
+  goal: PhysiqueGoal,
+  weightKg: number,
+  variationSeed = 0
+): WorkoutDay[] {
+  return buildVariedSplit(gender, goal, weightKg, variationSeed);
 }
 
 export interface BlueprintGenerationInput {
@@ -1470,6 +95,8 @@ export interface BlueprintGenerationInput {
   goal: PhysiqueGoal;
   metrics: BodyMetrics;
   schedule: BioSchedule;
+  variationSeed?: number;
+  previousSplit?: WorkoutDay[];
 }
 
 export async function generateAthleteBlueprint(
@@ -1479,19 +106,33 @@ export async function generateAthleteBlueprint(
   quotes: string[];
   source: 'gemini-2.5-flash' | 'kinetix-engine';
 }> {
+  const seed = input.variationSeed ?? 0;
+  const avoidExercises = (input.previousSplit ?? [])
+    .flatMap((d) => d.exercises.map((e) => e.name))
+    .slice(0, 16);
+
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 16000);
+    const timer = setTimeout(() => controller.abort(), 14000);
 
     const response = await fetch('/api/blueprint', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(input),
+      body: JSON.stringify({
+        name: input.name,
+        gender: input.gender,
+        goal: input.goal,
+        metrics: input.metrics,
+        schedule: input.schedule,
+        variationSeed: seed,
+        avoidExercises,
+      }),
       signal: controller.signal,
     });
     clearTimeout(timer);
 
-    if (response.ok) {
+    const contentType = response.headers.get('content-type') ?? '';
+    if (response.ok && contentType.includes('application/json')) {
       const data = await response.json();
       if (
         data?.ok &&
@@ -1501,21 +142,81 @@ export async function generateAthleteBlueprint(
         Array.isArray(data.blueprint.quotes) &&
         data.blueprint.quotes.length > 0
       ) {
-        const hydrated = hydrateSplit(data.blueprint.split as RawDayTemplate[]);
-        return {
-          split: hydrated,
-          quotes: data.blueprint.quotes as string[],
-          source: 'gemini-2.5-flash',
-        };
+        const hydrated = hydrateSplit(data.blueprint.split as RawDayTemplate[], seed);
+        // Guarantee distinctness from previousSplit if regenerating
+        const prevFirst = input.previousSplit?.[0]?.exercises?.[0]?.name;
+        const nextFirst = hydrated[0]?.exercises?.[0]?.name;
+        if (!prevFirst || prevFirst !== nextFirst || seed === 0) {
+          return {
+            split: hydrated,
+            quotes: data.blueprint.quotes as string[],
+            source: 'gemini-2.5-flash',
+          };
+        }
       }
     }
   } catch {
-    // Graceful fallback to instant rich deterministic engine
+    // Static hosts (Netlify) or offline: check optional Vite key or use rich multi-split engine
+  }
+
+  // Optional static-host support if deployer sets VITE_GEMINI_API_KEY
+  try {
+    const viteKey =
+      (import.meta as unknown as { env?: Record<string, string | undefined> }).env
+        ?.VITE_GEMINI_API_KEY;
+    if (viteKey && viteKey !== 'MY_GEMINI_API_KEY' && viteKey.trim() !== '') {
+      const firstName = input.name.trim().split(/\s+/)[0] || input.name.trim();
+      const avoidLine =
+        avoidExercises.length > 0
+          ? ` Avoid repeating these previous exercises: ${avoidExercises.join(', ')}.`
+          : '';
+      const prompt = `Return ONLY valid JSON with keys "split" (7 objects dayIndex 0..6, dayLabel Mon..Sun, title, targetMuscle, durationMin, isRestDay, warmupTitle, warmupDrills[{name,prescription}], exercises[{name,muscle,cue,tempo,restSeconds,setsCount,targetReps,suggestedWeightKg}]) and "quotes" (20 strings addressing ${firstName}). Profile: gender=${input.gender}, goal=${input.goal}, height=${input.metrics.heightCm}cm, weight=${input.metrics.weightKg}kg, age=${input.metrics.age}, variationSeed=${seed}.${avoidLine}`;
+
+      const restRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(
+          viteKey.trim()
+        )}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseMimeType: 'application/json' },
+          }),
+        }
+      );
+      if (restRes.ok) {
+        const restJson = await restRes.json();
+        const text = restJson?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (typeof text === 'string' && text.trim()) {
+          const parsed = JSON.parse(text.trim());
+          if (
+            Array.isArray(parsed.split) &&
+            parsed.split.length === 7 &&
+            Array.isArray(parsed.quotes) &&
+            parsed.quotes.length > 0
+          ) {
+            const hydrated = hydrateSplit(parsed.split as RawDayTemplate[], seed);
+            const prevFirst = input.previousSplit?.[0]?.exercises?.[0]?.name;
+            const nextFirst = hydrated[0]?.exercises?.[0]?.name;
+            if (!prevFirst || prevFirst !== nextFirst || seed === 0) {
+              return {
+                split: hydrated,
+                quotes: parsed.quotes as string[],
+                source: 'gemini-2.5-flash',
+              };
+            }
+          }
+        }
+      }
+    }
+  } catch {
+    // Smoothly proceed to rich deterministic engine below
   }
 
   return {
-    split: buildFallbackSplit(input.gender, input.goal, input.metrics.weightKg),
-    quotes: buildFallbackQuotes(input.name, input.schedule.vibe),
+    split: buildVariedSplit(input.gender, input.goal, input.metrics.weightKg, seed),
+    quotes: buildVariedQuotes(input.name, input.schedule.vibe, seed),
     source: 'kinetix-engine',
   };
 }

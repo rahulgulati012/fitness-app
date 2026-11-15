@@ -6,7 +6,7 @@ import type {
   ToastMessage,
   UserProfile,
 } from './types/kinetix';
-import { db, getTodaySplitDayIndex } from './services/db';
+import { AVATAR_OPTIONS, db, getTodaySplitDayIndex } from './services/db';
 import {
   applyThemeCssVars,
   calculateSleepTargetHours,
@@ -317,19 +317,29 @@ export default function App() {
                   user={activeUser}
                   theme={theme}
                   onUpdateProfileAndPlan={(patch) => {
-                    const updated = db.updateUser(activeUser.id, (u) => ({
-                      ...u,
-                      metrics: patch.metrics,
-                      goal: patch.goal,
-                      schedule: patch.schedule,
-                      split: patch.split,
-                      quotes: patch.quotes,
-                      blueprintSource: patch.blueprintSource,
-                    }));
+                    const updated = db.updateUser(activeUser.id, (u) => {
+                      const usingDefaultGenderAvatar = AVATAR_OPTIONS[u.gender].includes(u.avatarUrl);
+                      const nextAvatar =
+                        u.gender !== patch.gender && usingDefaultGenderAvatar
+                          ? AVATAR_OPTIONS[patch.gender][0]
+                          : u.avatarUrl;
+                      return {
+                        ...u,
+                        avatarUrl: nextAvatar,
+                        gender: patch.gender,
+                        metrics: patch.metrics,
+                        goal: patch.goal,
+                        schedule: patch.schedule,
+                        split: patch.split,
+                        quotes: patch.quotes,
+                        blueprintSource: patch.blueprintSource,
+                        planVersion: patch.planVersion,
+                      };
+                    });
                     syncUsers(updated);
                     pushToast({
                       title: 'Custom Blueprint Updated',
-                      body: `7-day split & hydration targets recalibrated for ${patch.goal}.`,
+                      body: `New split active (${patch.goal}): ${patch.split[0]?.title ?? 'Day 1'}`,
                       category: 'success',
                     });
                   }}
