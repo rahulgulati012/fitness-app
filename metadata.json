@@ -1,0 +1,6 @@
+{
+  "name": "KINETIX",
+  "description": "Precision physique engineering, adaptive 7-day training splits, bio-recovery telemetry, and squad accountability.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
