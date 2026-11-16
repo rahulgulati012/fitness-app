@@ -37,7 +37,7 @@ interface ProfileTabProps {
     quotes: string[];
     blueprintSource: 'gemini-2.5-flash' | 'kinetix-engine';
     planVersion: number;
-  }) => void;
+  }) => Promise<void> | void;
   onUpdateReminders: (reminders: ReminderSettings) => void;
   onTestReminder: (kind: 'workout' | 'hydration' | 'bedtime') => void;
   onOpenCloudModal: () => void;
@@ -106,27 +106,30 @@ export function ProfileTab({
     const nextSchedule = { ...user.schedule, workoutTime, bedTime };
     const safeGoal = goalOptions.some((g) => g.title === goal) ? goal : goalOptions[0].title;
 
-    const result = await generateAthleteBlueprint({
-      name: user.name,
-      gender: user.gender,
-      goal: safeGoal,
-      metrics: nextMetrics,
-      schedule: nextSchedule,
-      variationSeed: nextPlanVersion,
-      previousSplit: user.split,
-    });
+    try {
+      const result = await generateAthleteBlueprint({
+        name: user.name,
+        gender: user.gender,
+        goal: safeGoal,
+        metrics: nextMetrics,
+        schedule: nextSchedule,
+        variationSeed: nextPlanVersion,
+        previousSplit: user.split,
+      });
 
-    setRegenerating(false);
-    onUpdateProfileAndPlan({
-      gender: user.gender,
-      metrics: nextMetrics,
-      goal: safeGoal,
-      schedule: nextSchedule,
-      split: result.split,
-      quotes: result.quotes,
-      blueprintSource: result.source,
-      planVersion: nextPlanVersion,
-    });
+      await onUpdateProfileAndPlan({
+        gender: user.gender,
+        metrics: nextMetrics,
+        goal: safeGoal,
+        schedule: nextSchedule,
+        split: result.split,
+        quotes: result.quotes,
+        blueprintSource: result.source,
+        planVersion: nextPlanVersion,
+      });
+    } finally {
+      setRegenerating(false);
+    }
   };
 
   return (

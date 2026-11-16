@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Bell, ChevronDown, Flame, LogOut, Plus, RefreshCw, X } from 'lucide-react';
 import type { ThemeTokens, UserProfile } from '../types/kinetix';
+import type { SupabaseConnectionStatus } from '../services/supabaseSync';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { getShortGoalLabel } from '../services/theme';
 import { AthleteAvatar } from './AthleteAvatar';
@@ -9,6 +10,7 @@ interface TopBarProps {
   activeUser: UserProfile;
   allUsers: UserProfile[];
   theme: ThemeTokens;
+  connectionStatus: SupabaseConnectionStatus;
   onSwitchUser: (userId: string) => void;
   onAddNewAthlete: () => void;
   onSignOut: () => void;
@@ -19,6 +21,7 @@ export function TopBar({
   activeUser,
   allUsers,
   theme,
+  connectionStatus,
   onSwitchUser,
   onAddNewAthlete,
   onSignOut,
@@ -26,6 +29,7 @@ export function TopBar({
 }: TopBarProps) {
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
 
   const firstName = activeUser.name.trim().split(/\s+/)[0] || activeUser.name;
   const unreadCount = activeUser.notifications.filter((n) => !n.read).length;
@@ -34,7 +38,7 @@ export function TopBar({
     <>
       <header className="sticky top-0 z-40 px-4 py-2.5 bg-[#090A0F]/85 backdrop-blur-xl border-b border-white/[0.06]">
         <div className="flex items-center justify-between gap-2">
-          {/* Left: Avatar + Greeting + Goal Tag */}
+          {/* Left: Avatar + Greeting + Status Pill + Goal Tag */}
           <div className="flex items-center gap-2.5 min-w-0">
             <AthleteAvatar
               name={activeUser.name}
@@ -43,10 +47,28 @@ export function TopBar({
               sizeClass="w-9 h-9"
             />
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5 min-w-0">
+              <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                 <span className="text-sm font-bold text-white truncate">
                   Hey, {firstName}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => setStatusOpen((v) => !v)}
+                  title={connectionStatus.detail}
+                  aria-label={`Sync status: ${connectionStatus.label}. ${connectionStatus.detail}`}
+                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold border whitespace-nowrap transition-colors ${
+                    connectionStatus.connected
+                      ? 'bg-white/[0.05] border-white/15 text-white/85'
+                      : 'bg-amber-500/15 border-amber-400/35 text-amber-200'
+                  }`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      connectionStatus.connected ? 'bg-emerald-400' : 'bg-rose-500'
+                    }`}
+                  />
+                  <span>{connectionStatus.label}</span>
+                </button>
               </div>
               <span
                 className="inline-block text-[10px] font-semibold tracking-tight whitespace-nowrap px-2 py-0.5 rounded-full mt-0.5"
@@ -109,6 +131,19 @@ export function TopBar({
             </button>
           </div>
         </div>
+        {statusOpen && (
+          <div className="mt-2 px-3 py-2 rounded-xl bg-[#1A1D28] border border-white/10 flex items-start justify-between gap-2 text-[11px] text-white/80">
+            <span className="leading-snug">{connectionStatus.detail}</span>
+            <button
+              type="button"
+              onClick={() => setStatusOpen(false)}
+              aria-label="Dismiss sync status"
+              className="text-white/50 hover:text-white shrink-0"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Quick User Switcher Drawer */}

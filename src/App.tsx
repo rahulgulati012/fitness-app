@@ -7,9 +7,14 @@ import type {
   ToastMessage,
   UserProfile,
 } from './types/kinetix';
-import { isSupabaseConfigured, supabase } from './lib/supabase';
+import {
+  getSupabaseConfigDiagnostics,
+  isSupabaseConfigured,
+  supabase,
+} from './lib/supabase';
 import { db, getTodaySplitDayIndex } from './services/db';
 import {
+  checkSupabaseConnection,
   hydrateAuthenticatedUserFromSupabase,
   restoreSupabaseSession,
   signInWithSupabase,
@@ -18,6 +23,8 @@ import {
   syncDailyLogToSupabase,
   syncProfileToSupabase,
   syncUserPlanToSupabase,
+  type SupabaseConnectionStatus,
+  type SupabaseWriteResult,
 } from './services/supabaseSync';
 import {
   applyThemeCssVars,
@@ -55,6 +62,19 @@ export default function App() {
   const [cloudModalOpen, setCloudModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(() => isSupabaseConfigured());
+  const [connectionStatus, setConnectionStatus] = useState<SupabaseConnectionStatus>(() =>
+    isSupabaseConfigured()
+      ? {
+          connected: true,
+          label: 'Cloud Synced',
+          detail: 'Verifying Supabase connection...',
+        }
+      : {
+          connected: false,
+          label: 'Local Only (Check Keys/Tables)',
+          detail: getSupabaseConfigDiagnostics(),
+        }
+  );
   const manualAuthInFlightRef = useRef(false);
 
   // Never compute gender theme while auth is loading; wait for profile row
@@ -85,6 +105,12 @@ export default function App() {
       );
       setViewMode('app');
     };
+
+    const verifyCloud = async () => {
+      const status = await checkSupabaseConnection();
+      if (!cancelled) setConnectionStatus(status);
+    };
+    void verifyCloud();
 
     restoreSupabaseSession()
       .then((cloudUser) => {
@@ -174,6 +200,31 @@ export default function App() {
     setActiveUser(updatedActive);
   };
 
+  const trackWriteResult = (res: SupabaseWriteResult, contextLabel: string) => {
+    if (!isSupabaseConfigured()) return;
+    if (res.ok) {
+      setConnectionStatus({
+        connected: true,
+        label: 'Cloud Synced',
+        detail: `Last synced ${contextLabel} at ${new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        })}.`,
+      });
+    } else if (res.error) {
+      setConnectionStatus({
+        connected: false,
+        label: 'Local Only (Check Keys/Tables)',
+        detail: `${contextLabel} save failed: ${res.error}`,
+      });
+      pushToast({
+        title: 'Cloud Sync Issue',
+        body: res.error,
+        category: 'alert',
+      });
+    }
+  };
+
   const handleQuickSwitch = (userId: string) => {
     const switched = db.switchUser(userId);
     if (!switched) return;
@@ -208,6 +259,9 @@ export default function App() {
       );
       setActiveTab('home');
       setViewMode('app');
+      if (isSupabaseConfigured()) {
+        void checkSupabaseConnection().then(setConnectionStatus);
+      }
       return undefined;
     } finally {
       manualAuthInFlightRef.current = false;
@@ -243,6 +297,9 @@ export default function App() {
       setSelectedWorkoutDay(getTodaySplitDayIndex());
       setActiveTab('home');
       setViewMode('app');
+      if (isSupabaseConfigured()) {
+        void checkSupabaseConnection().then(setConnectionStatus);
+      }
       pushToast({
         title: 'Custom Blueprint Ready',
         body: res.notice
@@ -299,7 +356,10 @@ export default function App() {
       ],
     }));
     syncUsers(updated);
-    if (updated) void syncProfileToSupabase(updated);
+    if (updated) {
+      const writeRes = await syncProfileToSupabase(updated);
+      trackWriteResult(writeRes, 'profile');
+    }
 
     if (typeof window !== 'undefined' && 'Notification' in window) {
       try {
@@ -366,13 +426,17 @@ export default function App() {
               activeUser={activeUser}
               allUsers={users}
               theme={theme}
+              connectionStatus={connectionStatus}
               onSwitchUser={handleQuickSwitch}
               onAddNewAthlete={() => handleStartOnboarding()}
               onSignOut={handleSignOut}
-              onMarkNotificationsRead={() => {
+              onMarkNotificationsRead={async () => {
                 const updated = db.markNotificationsRead(activeUser.id);
                 syncUsers(updated);
-                if (updated) void syncProfileToSupabase(updated);
+                if (updated) {
+                  const res = await syncProfileToSupabase(updated);
+                  trackWriteResult(res, 'notifications');
+                }
               }}
             />
 
@@ -381,30 +445,42 @@ export default function App() {
                 <DashboardTab
                   user={activeUser}
                   theme={theme}
-                  onUpdateWater={(delta, reset) => {
+                  onUpdateWater={async (delta, reset) => {
                     const updated = db.updateWater(activeUser.id, delta, reset);
                     syncUsers(updated);
-                    if (updated) void syncDailyLogToSupabase(updated);
+                    if (updated) {
+                      const res = await syncDailyLogToSupabase(updated);
+                      trackWriteResult(res, 'water intake');
+                    }
                   }}
-                  onUpdateSteps={(delta) => {
+                  onUpdateSteps={async (delta) => {
                     const updated = db.updateSteps(activeUser.id, delta);
                     syncUsers(updated);
-                    if (updated) void syncDailyLogToSupabase(updated);
+                    if (updated) {
+                      const res = await syncDailyLogToSupabase(updated);
+                      trackWriteResult(res, 'steps');
+                    }
                   }}
-                  onUpdateSleep={(delta) => {
+                  onUpdateSleep={async (delta) => {
                     const updated = db.updateSleep(activeUser.id, delta);
                     syncUsers(updated);
-                    if (updated) void syncDailyLogToSupabase(updated);
+                    if (updated) {
+                      const res = await syncDailyLogToSupabase(updated);
+                      trackWriteResult(res, 'sleep hours');
+                    }
                   }}
-                  onStartSession={(dayIdx) => {
+                  onStartSession={async (dayIdx) => {
                     setSelectedWorkoutDay(dayIdx);
                     const updated = db.updateUser(activeUser.id, (u) => ({
                       ...u,
                       currentSplitDay: dayIdx,
                     }));
                     syncUsers(updated);
-                    if (updated) void syncProfileToSupabase(updated);
                     setActiveTab('workout');
+                    if (updated) {
+                      const res = await syncProfileToSupabase(updated);
+                      trackWriteResult(res, 'split selection');
+                    }
                   }}
                 />
               )}
@@ -414,24 +490,30 @@ export default function App() {
                   user={activeUser}
                   theme={theme}
                   selectedDayIndex={selectedWorkoutDay}
-                  onSelectDay={(dayIdx) => {
+                  onSelectDay={async (dayIdx) => {
                     setSelectedWorkoutDay(dayIdx);
                     const updated = db.updateUser(activeUser.id, (u) => ({
                       ...u,
                       currentSplitDay: dayIdx,
                     }));
                     syncUsers(updated);
-                    if (updated) void syncProfileToSupabase(updated);
+                    if (updated) {
+                      const res = await syncProfileToSupabase(updated);
+                      trackWriteResult(res, 'split selection');
+                    }
                   }}
-                  onToggleWarmupDrill={(dayIdx, drillId) => {
+                  onToggleWarmupDrill={async (dayIdx, drillId) => {
                     const updated = db.toggleWarmupDrill(activeUser.id, dayIdx, drillId);
                     syncUsers(updated);
                     if (updated) {
-                      void syncUserPlanToSupabase(updated);
-                      void syncDailyLogToSupabase(updated, dayIdx);
+                      const [planRes, logRes] = await Promise.all([
+                        syncUserPlanToSupabase(updated),
+                        syncDailyLogToSupabase(updated, dayIdx),
+                      ]);
+                      trackWriteResult(planRes.ok ? logRes : planRes, 'warmup checklist');
                     }
                   }}
-                  onUpdateSet={(dayIdx, exId, setId, patch) => {
+                  onUpdateSet={async (dayIdx, exId, setId, patch) => {
                     const updated = db.updateExerciseSet(
                       activeUser.id,
                       dayIdx,
@@ -441,17 +523,24 @@ export default function App() {
                     );
                     syncUsers(updated);
                     if (updated) {
-                      void syncUserPlanToSupabase(updated);
-                      void syncDailyLogToSupabase(updated, dayIdx);
+                      const [planRes, logRes] = await Promise.all([
+                        syncUserPlanToSupabase(updated),
+                        syncDailyLogToSupabase(updated, dayIdx),
+                      ]);
+                      trackWriteResult(planRes.ok ? logRes : planRes, 'exercise set');
                     }
                   }}
-                  onFinishWorkout={(dayIdx) => {
+                  onFinishWorkout={async (dayIdx) => {
                     const updated = db.completeWorkoutDay(activeUser.id, dayIdx);
                     syncUsers(updated);
                     if (updated) {
-                      void syncDailyLogToSupabase(updated, dayIdx);
-                      void syncUserPlanToSupabase(updated);
-                      void syncProfileToSupabase(updated);
+                      const [logRes, planRes, profRes] = await Promise.all([
+                        syncDailyLogToSupabase(updated, dayIdx),
+                        syncUserPlanToSupabase(updated),
+                        syncProfileToSupabase(updated),
+                      ]);
+                      const failed = [logRes, planRes, profRes].find((r) => !r.ok);
+                      trackWriteResult(failed ?? logRes, 'workout completion');
                     }
                   }}
                 />
@@ -461,18 +550,21 @@ export default function App() {
                 <ProgressTab
                   user={activeUser}
                   theme={theme}
-                  onLogMeasurements={(entry) => {
+                  onLogMeasurements={async (entry) => {
                     const updated = db.logBodyMeasurement(activeUser.id, entry);
                     syncUsers(updated);
-                    if (updated) {
-                      void syncProfileToSupabase(updated);
-                      void syncDailyLogToSupabase(updated);
-                    }
                     pushToast({
                       title: 'Measurements Logged',
                       body: `Updated body weight to ${entry.weightKg} kg and synced physique graph.`,
                       category: 'success',
                     });
+                    if (updated) {
+                      const [profRes, logRes] = await Promise.all([
+                        syncProfileToSupabase(updated),
+                        syncDailyLogToSupabase(updated),
+                      ]);
+                      trackWriteResult(profRes.ok ? logRes : profRes, 'body measurements');
+                    }
                   }}
                 />
               )}
@@ -486,10 +578,9 @@ export default function App() {
                     const merged = db.mergeRemoteUsers(remoteUsers);
                     setUsers(merged);
                   }}
-                  onToggleSquadMember={(friendId) => {
+                  onToggleSquadMember={async (friendId) => {
                     const res = db.toggleSquadMember(activeUser.id, friendId);
                     syncUsers(res.user);
-                    if (res.user) void syncProfileToSupabase(res.user);
                     pushToast({
                       title: res.added ? 'Added to Squad' : 'Removed from Squad',
                       body: res.added
@@ -497,6 +588,10 @@ export default function App() {
                         : `${res.friendName} was removed from your Squad list.`,
                       category: 'info',
                     });
+                    if (res.user) {
+                      const writeRes = await syncProfileToSupabase(res.user);
+                      trackWriteResult(writeRes, 'squad circle');
+                    }
                   }}
                   onSendHype={(targetId) => {
                     const res = db.sendHype(activeUser.id, targetId);
@@ -518,7 +613,7 @@ export default function App() {
                   key={activeUser.id}
                   user={activeUser}
                   theme={theme}
-                  onUpdateProfileAndPlan={(patch) => {
+                  onUpdateProfileAndPlan={async (patch) => {
                     const updated = db.updateUser(activeUser.id, (u) => ({
                       ...u,
                       gender: u.gender,
@@ -532,8 +627,11 @@ export default function App() {
                     }));
                     syncUsers(updated);
                     if (updated) {
-                      void syncProfileToSupabase(updated);
-                      void syncUserPlanToSupabase(updated);
+                      const [profRes, planRes] = await Promise.all([
+                        syncProfileToSupabase(updated),
+                        syncUserPlanToSupabase(updated),
+                      ]);
+                      trackWriteResult(profRes.ok ? planRes : profRes, 'routine blueprint');
                     }
                     pushToast({
                       title: 'Custom Blueprint Updated',
@@ -541,10 +639,13 @@ export default function App() {
                       category: 'success',
                     });
                   }}
-                  onUpdateReminders={(reminders: ReminderSettings) => {
+                  onUpdateReminders={async (reminders: ReminderSettings) => {
                     const updated = db.updateReminders(activeUser.id, reminders);
                     syncUsers(updated);
-                    if (updated) void syncProfileToSupabase(updated);
+                    if (updated) {
+                      const writeRes = await syncProfileToSupabase(updated);
+                      trackWriteResult(writeRes, 'reminder preferences');
+                    }
                   }}
                   onTestReminder={handleTestReminder}
                   onOpenCloudModal={() => setCloudModalOpen(true)}

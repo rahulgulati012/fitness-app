@@ -61,6 +61,28 @@ export function SquadTab({
   const todayIdx = getTodaySplitDayIndex();
   const supabaseLive = isSupabaseConfigured();
   const [loadingDiscover, setLoadingDiscover] = useState<boolean>(supabaseLive);
+  const [cloudError, setCloudError] = useState<string | null>(null);
+
+  const loadLiveDirectory = () => {
+    if (supabaseLive) {
+      setLoadingDiscover(true);
+    }
+    setCloudError(null);
+
+    fetchDiscoverableSupabaseAthletes(activeUser.id)
+      .then(({ results, fromCloud, error }) => {
+        if (error) setCloudError(error);
+        if (fromCloud) {
+          setDiscoverableCloudUsers(results);
+          if (results.length > 0) {
+            onSyncRemoteUsers?.(results);
+          }
+        }
+      })
+      .finally(() => {
+        setLoadingDiscover(false);
+      });
+  };
 
   // Refresh live daily_logs & profiles for added Squad members AND fetch discoverable athletes on mount
   useEffect(() => {
@@ -68,10 +90,13 @@ export function SquadTab({
     if (supabaseLive) {
       setLoadingDiscover(true);
     }
+    setCloudError(null);
 
     fetchDiscoverableSupabaseAthletes(activeUser.id)
-      .then(({ results, fromCloud }) => {
-        if (!cancelled && fromCloud) {
+      .then(({ results, fromCloud, error }) => {
+        if (cancelled) return;
+        if (error) setCloudError(error);
+        if (fromCloud) {
           setDiscoverableCloudUsers(results);
           if (results.length > 0) {
             onSyncRemoteUsers?.(results);
@@ -106,10 +131,12 @@ export function SquadTab({
 
     let cancelled = false;
     setSearchingCloud(true);
+    setCloudError(null);
 
     const timer = setTimeout(async () => {
-      const { results } = await searchSupabaseAthletes(clean, activeUser.id);
+      const { results, error } = await searchSupabaseAthletes(clean, activeUser.id);
       if (!cancelled) {
+        if (error) setCloudError(error);
         setRemoteSearchResults(results);
         setSearchingCloud(false);
         if (results.length > 0) {
@@ -335,6 +362,20 @@ export function SquadTab({
           </div>
         )}
 
+        {/* Cloud Query Error Notice */}
+        {cloudError && (
+          <div className="px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-400/30 text-[11px] text-amber-200 flex items-center justify-between gap-2">
+            <span className="truncate">Cloud query issue: {cloudError}</span>
+            <button
+              type="button"
+              onClick={loadLiveDirectory}
+              className="text-[10px] font-semibold underline shrink-0"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* Registered Athletes Available to Add (auto-loaded from Supabase when search is empty) */}
         {!cleanQuery && loadingDiscover && discoverSuggestions.length === 0 && (
           <div className="pt-1 flex items-center gap-2 text-xs text-white/55">
@@ -349,7 +390,13 @@ export function SquadTab({
               <p className="text-[11px] font-semibold text-white/55">
                 Registered Athletes ({discoverSuggestions.length})
               </p>
-              <span className="text-[10px] text-white/40">Tap to inspect or add</span>
+              <button
+                type="button"
+                onClick={loadLiveDirectory}
+                className="text-[10px] font-semibold text-white/55 hover:text-white transition-colors"
+              >
+                Refresh Live
+              </button>
             </div>
             <div className="space-y-2 max-h-[240px] overflow-y-auto pr-0.5">
               {discoverSuggestions.map((candidate) => {

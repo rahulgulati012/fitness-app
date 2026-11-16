@@ -1,5 +1,9 @@
 import type { User as SupabaseAuthUser } from '@supabase/supabase-js';
-import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import {
+  getSupabaseConfigDiagnostics,
+  isSupabaseConfigured,
+  supabase,
+} from '../lib/supabase';
 import { buildVariedQuotes, buildVariedSplit } from '../data/workoutEngine';
 import type {
   BodyMeasurementEntry,
@@ -20,6 +24,48 @@ import {
   getTodayDateKey,
   getTodaySplitDayIndex,
 } from './db';
+
+export interface SupabaseConnectionStatus {
+  connected: boolean;
+  label: string;
+  detail: string;
+}
+
+export interface SupabaseWriteResult {
+  ok: boolean;
+  error?: string;
+}
+
+export async function checkSupabaseConnection(): Promise<SupabaseConnectionStatus> {
+  if (!isSupabaseConfigured() || !supabase) {
+    return {
+      connected: false,
+      label: 'Local Only (Check Keys/Tables)',
+      detail: getSupabaseConfigDiagnostics(),
+    };
+  }
+  try {
+    const { error } = await supabase.from('profiles').select('id').limit(1);
+    if (error) {
+      return {
+        connected: false,
+        label: 'Local Only (Check Keys/Tables)',
+        detail: `profiles query error: ${error.message}`,
+      };
+    }
+    return {
+      connected: true,
+      label: 'Cloud Synced',
+      detail: 'Supabase connected and profiles table reachable.',
+    };
+  } catch (err) {
+    return {
+      connected: false,
+      label: 'Local Only (Check Keys/Tables)',
+      detail: err instanceof Error ? err.message : 'Unable to query Supabase profiles table.',
+    };
+  }
+}
 
 interface ProfileRow {
   id: string;
@@ -235,14 +281,10 @@ function mapSupabaseRowsToUserProfile(
   const age = scopedCache?.metrics.age || 26;
   const planVersion = scopedCache?.planVersion ?? 1;
 
-  const hasValidPlanSplit =
-    Array.isArray(plan?.workout_json) &&
-    plan.workout_json.length === 7 &&
-    !plan.workout_json.some(
-      (d) => !d.isRestDay && (!Array.isArray(d.exercises) || d.exercises.length < 6)
-    );
+  const hasSavedWorkoutJson =
+    Array.isArray(plan?.workout_json) && plan.workout_json.length > 0;
 
-  const baseSplit = hasValidPlanSplit
+  const baseSplit = hasSavedWorkoutJson
     ? (plan!.workout_json as WorkoutDay[])
     : buildVariedSplit(gender, goal, weightKg, Math.max(0, planVersion - 1));
 
@@ -412,7 +454,7 @@ function mapSupabaseRowsToUserProfile(
     createdAt: profile.created_at || scopedCache?.createdAt || new Date().toISOString(),
   };
 
-  if (options?.allowBackfillMissingPlan && !hasValidPlanSplit) {
+  if (options?.allowBackfillMissingPlan && !hasSavedWorkoutJson) {
     void syncUserPlanToSupabase(mapped);
   }
 
@@ -617,18 +659,22 @@ export async function hydrateAuthenticatedUserFromSupabase(
       fetch30DayLogsForUsers([authUser.id]),
     ]);
 
+    const planRow = (planRes.data as UserPlanRow | null) ?? null;
     const hydrated = mapSupabaseRowsToUserProfile(
       profileData as ProfileRow,
-      (planRes.data as UserPlanRow | null) ?? null,
-      logs,
-      { allowBackfillMissingPlan: true }
+      planRow,
+      logs
     );
+
+    if (!planRow || !Array.isArray(planRow.workout_json) || planRow.workout_json.length === 0) {
+      await syncUserPlanToSupabase(hydrated);
+    }
 
     return db.upsertSyncedUser(hydrated, true);
   }
 
   // If no row exists yet in public.profiles (e.g., older Auth account or first confirmed login),
-  // create the profile & user_plans row immediately using user_metadata so login NEVER fails or kicks them out.
+  // create the profile & user_plans row immediately using user_metadata.
   if (!profileErr) {
     const created = buildUserProfileFromAuthUser(authUser);
     db.saveUserCache(created);
@@ -636,12 +682,11 @@ export async function hydrateAuthenticatedUserFromSupabase(
     return db.upsertSyncedUser(created, true);
   }
 
-  // If transient query error occurred, return scoped cache or build cleanly from auth metadata
   const cached = db.getUserCache(authUser.id);
   if (cached) return db.upsertSyncedUser(cached, true);
 
   const fallbackCreated = buildUserProfileFromAuthUser(authUser);
-  void syncAllUserTablesToSupabase(fallbackCreated);
+  await syncAllUserTablesToSupabase(fallbackCreated);
   return db.upsertSyncedUser(fallbackCreated, true);
 }
 
@@ -752,9 +797,9 @@ export async function signUpWithSupabase(input: {
     db.saveUserCache(created);
 
     // Immediately upsert profile, gender-matched 6-exercise workout plan, and initial daily log
-    const ok = await syncAllUserTablesToSupabase(created);
+    const syncRes = await syncAllUserTablesToSupabase(created);
 
-    if (!data.session && !ok) {
+    if (!data.session && !syncRes.ok) {
       return {
         user: created,
         syncedToCloud: false,
@@ -762,7 +807,15 @@ export async function signUpWithSupabase(input: {
       };
     }
 
-    return { user: created, syncedToCloud: ok };
+    if (!syncRes.ok && syncRes.error) {
+      return {
+        user: created,
+        syncedToCloud: false,
+        notice: `Account created, but cloud sync reported: ${syncRes.error}`,
+      };
+    }
+
+    return { user: created, syncedToCloud: syncRes.ok };
   } catch (err) {
     return {
       syncedToCloud: false,
@@ -781,47 +834,52 @@ export async function signOutFromSupabase(): Promise<void> {
   }
 }
 
-export async function syncProfileToSupabase(user: UserProfile): Promise<boolean> {
+export async function syncProfileToSupabase(user: UserProfile): Promise<SupabaseWriteResult> {
   db.saveUserCache(user);
-  if (!isSupabaseConfigured() || !supabase || !isUuid(user.id)) return false;
+  if (!isSupabaseConfigured() || !supabase || !isUuid(user.id)) {
+    return { ok: false, error: getSupabaseConfigDiagnostics() };
+  }
   try {
     const fullPayload = toFullProfilePayload(user);
     const { error } = await supabase
       .from('profiles')
       .upsert(fullPayload, { onConflict: 'id' });
 
-    if (!error) return true;
+    if (!error) return { ok: true };
 
-    // Fallback if extended optional columns (measurements_json, squad_ids) are absent
     const { error: squadOnlyErr } = await supabase
       .from('profiles')
       .upsert({ ...toCoreProfilePayload(user), squad_ids: user.squadIds }, { onConflict: 'id' });
-    if (!squadOnlyErr) return true;
+    if (!squadOnlyErr) return { ok: true };
 
     const { error: coreError } = await supabase
       .from('profiles')
       .upsert(toCoreProfilePayload(user), { onConflict: 'id' });
-    if (!coreError) return true;
+    if (!coreError) return { ok: true };
 
     const { current_split_day: _ignored, ...strictMinimal } = toCoreProfilePayload(user);
     const { error: minimalErr } = await supabase
       .from('profiles')
       .upsert(strictMinimal, { onConflict: 'id' });
-    return !minimalErr;
-  } catch {
-    return false;
+    if (!minimalErr) return { ok: true };
+
+    return { ok: false, error: minimalErr.message || error.message };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Profile sync failed.' };
   }
 }
 
-export async function syncUserPlanToSupabase(user: UserProfile): Promise<boolean> {
+export async function syncUserPlanToSupabase(user: UserProfile): Promise<SupabaseWriteResult> {
   db.saveUserCache(user);
-  if (!isSupabaseConfigured() || !supabase || !isUuid(user.id)) return false;
+  if (!isSupabaseConfigured() || !supabase || !isUuid(user.id)) {
+    return { ok: false, error: getSupabaseConfigDiagnostics() };
+  }
   try {
     const payload = toUserPlanPayload(user);
     const { error } = await supabase
       .from('user_plans')
       .upsert(payload, { onConflict: 'user_id' });
-    if (!error) return true;
+    if (!error) return { ok: true };
 
     const { error: bareErr } = await supabase
       .from('user_plans')
@@ -829,24 +887,28 @@ export async function syncUserPlanToSupabase(user: UserProfile): Promise<boolean
         { user_id: user.id, workout_json: user.split, quotes_json: user.quotes },
         { onConflict: 'user_id' }
       );
-    return !bareErr;
-  } catch {
-    return false;
+    if (!bareErr) return { ok: true };
+
+    return { ok: false, error: bareErr.message || error.message };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Plan sync failed.' };
   }
 }
 
 export async function syncDailyLogToSupabase(
   user: UserProfile,
   activeDayIndex?: number
-): Promise<boolean> {
+): Promise<SupabaseWriteResult> {
   db.saveUserCache(user);
-  if (!isSupabaseConfigured() || !supabase || !isUuid(user.id)) return false;
+  if (!isSupabaseConfigured() || !supabase || !isUuid(user.id)) {
+    return { ok: false, error: getSupabaseConfigDiagnostics() };
+  }
   try {
     const payload = toDailyLogPayload(user, activeDayIndex);
     const { error } = await supabase
       .from('daily_logs')
       .upsert(payload, { onConflict: 'user_id,date' });
-    if (!error) return true;
+    if (!error) return { ok: true };
 
     const { date: dateVal, ...rest } = payload;
     const { error: coreDateErr } = await supabase
@@ -856,13 +918,14 @@ export async function syncDailyLogToSupabase(
           user_id: user.id,
           date: dateVal,
           workout_completed: user.dailyLog.workoutCompleted,
+          completed_exercises: payload.completed_exercises,
           water_ml: user.dailyLog.waterMl,
           steps_count: user.dailyLog.steps,
           sleep_hours: user.dailyLog.sleepHours,
         },
         { onConflict: 'user_id,date' }
       );
-    if (!coreDateErr) return true;
+    if (!coreDateErr) return { ok: true };
 
     const { error: logDateErr } = await supabase
       .from('daily_logs')
@@ -870,34 +933,49 @@ export async function syncDailyLogToSupabase(
         { ...rest, log_date: dateVal },
         { onConflict: 'user_id,log_date' }
       );
-    return !logDateErr;
-  } catch {
-    return false;
+    if (!logDateErr) return { ok: true };
+
+    return { ok: false, error: logDateErr.message || error.message };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Daily log sync failed.' };
   }
 }
 
-export async function syncAllUserTablesToSupabase(user: UserProfile): Promise<boolean> {
+export async function syncAllUserTablesToSupabase(
+  user: UserProfile
+): Promise<SupabaseWriteResult> {
   db.saveUserCache(user);
-  if (!isSupabaseConfigured() || !supabase || !isUuid(user.id)) return false;
+  if (!isSupabaseConfigured() || !supabase || !isUuid(user.id)) {
+    return { ok: false, error: getSupabaseConfigDiagnostics() };
+  }
   try {
-    const profileOk = await syncProfileToSupabase(user);
-    if (!profileOk) return false;
-    const [planOk, logOk] = await Promise.all([
+    const profileRes = await syncProfileToSupabase(user);
+    if (!profileRes.ok) return profileRes;
+    const [planRes, logRes] = await Promise.all([
       syncUserPlanToSupabase(user),
       syncDailyLogToSupabase(user),
     ]);
-    return planOk && logOk;
-  } catch {
-    return false;
+    if (!planRes.ok) return planRes;
+    if (!logRes.ok) return logRes;
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Cloud sync failed.' };
   }
 }
 
-async function hydrateProfileRowsWithPlansAndLogs(profiles: ProfileRow[]): Promise<UserProfile[]> {
+async function hydrateProfileRowsWithTodayAndPlans(
+  profiles: ProfileRow[],
+  prefetchedTodayLogs?: DailyLogRow[]
+): Promise<UserProfile[]> {
   if (!supabase || profiles.length === 0) return [];
   const ids = profiles.map((p) => p.id);
+  const todayDateStr = getTodayDateKey();
 
-  const [plansRes, logs] = await Promise.all([
+  const [plansRes, todayLogsRes, thirtyDayLogs] = await Promise.all([
     supabase.from('user_plans').select('*').in('user_id', ids),
+    prefetchedTodayLogs
+      ? Promise.resolve({ data: prefetchedTodayLogs, error: null })
+      : supabase.from('daily_logs').select('*').eq('date', todayDateStr).in('user_id', ids),
     fetch30DayLogsForUsers(ids),
   ]);
 
@@ -906,10 +984,20 @@ async function hydrateProfileRowsWithPlansAndLogs(profiles: ProfileRow[]): Promi
   );
 
   const logsByUser = new Map<string, DailyLogRow[]>();
-  for (const row of logs) {
+  const appendLog = (row: DailyLogRow) => {
     const existing = logsByUser.get(row.user_id) ?? [];
-    existing.push(row);
-    logsByUser.set(row.user_id, existing);
+    const dKey = (row.date || row.log_date || '').slice(0, 10);
+    if (!existing.some((r) => (r.date || r.log_date || '').slice(0, 10) === dKey)) {
+      existing.push(row);
+      logsByUser.set(row.user_id, existing);
+    }
+  };
+
+  for (const row of ((todayLogsRes.data as DailyLogRow[] | null) ?? [])) {
+    appendLog(row);
+  }
+  for (const row of thirtyDayLogs) {
+    appendLog(row);
   }
 
   const cloudUsers = profiles.map((p) =>
@@ -926,37 +1014,49 @@ async function hydrateProfileRowsWithPlansAndLogs(profiles: ProfileRow[]): Promi
 
 export async function fetchDiscoverableSupabaseAthletes(
   activeUserId: string
-): Promise<{ results: UserProfile[]; fromCloud: boolean }> {
-  const localDiscoverable = db
-    .getUsers()
-    .filter((u) => u.id !== activeUserId);
+): Promise<{ results: UserProfile[]; fromCloud: boolean; error?: string }> {
+  const localDiscoverable = db.getUsers().filter((u) => u.id !== activeUserId);
 
   if (!isSupabaseConfigured() || !supabase) {
     return { results: localDiscoverable, fromCloud: false };
   }
 
   try {
-    const { data: profileRows, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .neq('id', activeUserId)
-      .limit(20);
+    const todayDateStr = getTodayDateKey();
+    const [profilesRes, todayLogsRes] = await Promise.all([
+      supabase.from('profiles').select('*'),
+      supabase.from('daily_logs').select('*').eq('date', todayDateStr),
+    ]);
 
-    if (error || !profileRows) {
-      return { results: localDiscoverable, fromCloud: false };
+    if (profilesRes.error || !profilesRes.data) {
+      return {
+        results: [],
+        fromCloud: false,
+        error: profilesRes.error?.message || 'Unable to fetch profiles from Supabase.',
+      };
     }
 
-    const cloudUsers = await hydrateProfileRowsWithPlansAndLogs(profileRows as ProfileRow[]);
+    const otherProfiles = (profilesRes.data as ProfileRow[]).filter(
+      (p) => p.id !== activeUserId
+    );
+    const cloudUsers = await hydrateProfileRowsWithTodayAndPlans(
+      otherProfiles,
+      (todayLogsRes.data as DailyLogRow[] | null) ?? []
+    );
     return { results: cloudUsers, fromCloud: true };
-  } catch {
-    return { results: localDiscoverable, fromCloud: false };
+  } catch (err) {
+    return {
+      results: [],
+      fromCloud: false,
+      error: err instanceof Error ? err.message : 'Unable to fetch Squad directory.',
+    };
   }
 }
 
 export async function searchSupabaseAthletes(
   query: string,
   activeUserId: string
-): Promise<{ results: UserProfile[]; fromCloud: boolean }> {
+): Promise<{ results: UserProfile[]; fromCloud: boolean; error?: string }> {
   const clean = query.trim();
   const localMatches = db.getUsers().filter((u) => {
     if (u.id === activeUserId) return false;
@@ -979,22 +1079,49 @@ export async function searchSupabaseAthletes(
   }
 
   try {
-    const safeQ = clean.replace(/[,()"]/g, '').trim();
-    const { data: profileRows, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .neq('id', activeUserId)
-      .or(`display_name.ilike.%${safeQ}%,email.ilike.%${safeQ}%`)
-      .limit(20);
+    const todayDateStr = getTodayDateKey();
+    const q = clean.toLowerCase();
 
-    if (error || !profileRows) {
-      return { results: localMatches, fromCloud: false };
+    const [profilesRes, todayLogsRes] = await Promise.all([
+      supabase.from('profiles').select('*'),
+      supabase.from('daily_logs').select('*').eq('date', todayDateStr),
+    ]);
+
+    if (profilesRes.error || !profilesRes.data) {
+      return {
+        results: [],
+        fromCloud: false,
+        error: profilesRes.error?.message || 'Unable to query profiles from Supabase.',
+      };
     }
 
-    const cloudUsers = await hydrateProfileRowsWithPlansAndLogs(profileRows as ProfileRow[]);
+    const matchedProfiles = (profilesRes.data as ProfileRow[]).filter((p) => {
+      if (p.id === activeUserId) return false;
+      const name = (p.display_name || '').toLowerCase();
+      const email = (p.email || '').toLowerCase();
+      const goal = (p.goal || '').toLowerCase();
+      const uname = makeUsernameFromName(p.display_name || '').toLowerCase();
+      const pid = (p.id || '').toLowerCase();
+      return (
+        name.includes(q) ||
+        email.includes(q) ||
+        goal.includes(q) ||
+        uname.includes(q) ||
+        pid.includes(q)
+      );
+    });
+
+    const cloudUsers = await hydrateProfileRowsWithTodayAndPlans(
+      matchedProfiles,
+      (todayLogsRes.data as DailyLogRow[] | null) ?? []
+    );
     return { results: cloudUsers, fromCloud: true };
-  } catch {
-    return { results: localMatches, fromCloud: false };
+  } catch (err) {
+    return {
+      results: [],
+      fromCloud: false,
+      error: err instanceof Error ? err.message : 'Unable to search Supabase athletes.',
+    };
   }
 }
 
@@ -1007,14 +1134,18 @@ export async function refreshSquadLiveStatuses(
   }
 
   try {
-    const { data: profilesData, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .in('id', validIds);
+    const todayDateStr = getTodayDateKey();
+    const [profilesRes, todayLogsRes] = await Promise.all([
+      supabase.from('profiles').select('*').in('id', validIds),
+      supabase.from('daily_logs').select('*').eq('date', todayDateStr).in('user_id', validIds),
+    ]);
 
-    if (error || !profilesData) return [];
+    if (profilesRes.error || !profilesRes.data) return [];
 
-    return await hydrateProfileRowsWithPlansAndLogs(profilesData as ProfileRow[]);
+    return await hydrateProfileRowsWithTodayAndPlans(
+      profilesRes.data as ProfileRow[],
+      (todayLogsRes.data as DailyLogRow[] | null) ?? []
+    );
   } catch {
     return [];
   }
