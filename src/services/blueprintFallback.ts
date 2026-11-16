@@ -49,53 +49,47 @@ function hydrateSplit(
 ): WorkoutDay[] {
   return rawDays.map((d, mapIdx) => {
     const fallbackDay = fallbackSplit[d.dayIndex] ?? fallbackSplit[mapIdx] ?? fallbackSplit[0];
-    const mappedExercises: ExercisePlan[] = d.exercises.map((e, idx): ExercisePlan => {
-      const exId = `d${d.dayIndex}-v${variationSeed}-e${idx}`;
-      return {
-        id: exId,
-        name: e.name,
-        muscle: e.muscle,
-        cue: e.cue,
-        tempo: e.tempo,
-        restSeconds: e.restSeconds,
-        sets: makeSets(e.setsCount, e.suggestedWeightKg, e.targetReps, exId),
-      };
-    });
-
-    let finalExercises = mappedExercises;
-    if (!d.isRestDay) {
-      if (finalExercises.length < 6 && fallbackDay) {
-        const usedNames = new Set(finalExercises.map((ex) => ex.name.toLowerCase()));
-        const extras = fallbackDay.exercises.filter(
-          (ex) => !usedNames.has(ex.name.toLowerCase())
-        );
-        finalExercises = [...finalExercises, ...extras].slice(0, 6);
-        while (finalExercises.length < 6 && fallbackDay.exercises.length > 0) {
-          const nextEx = fallbackDay.exercises[finalExercises.length % fallbackDay.exercises.length];
-          finalExercises.push({
-            ...nextEx,
-            id: `d${d.dayIndex}-v${variationSeed}-pad-${finalExercises.length}`,
-          });
-        }
-      } else if (finalExercises.length > 6) {
-        finalExercises = finalExercises.slice(0, 6);
+    const mappedExercises: ExercisePlan[] = (Array.isArray(d.exercises) ? d.exercises : []).map(
+      (e, idx): ExercisePlan => {
+        const exId = `d${d.dayIndex}-v${variationSeed}-e${idx}`;
+        return {
+          id: exId,
+          name: e.name,
+          muscle: e.muscle,
+          cue: e.cue,
+          tempo: e.tempo || '2-0-1-0',
+          restSeconds: typeof e.restSeconds === 'number' ? e.restSeconds : 60,
+          sets: makeSets(
+            Math.max(1, Math.round(e.setsCount || 3)),
+            Math.max(0, Number(e.suggestedWeightKg) || 0),
+            Math.max(1, Math.round(e.targetReps || 10)),
+            exId
+          ),
+        };
       }
-    }
+    );
+
+    const finalExercises =
+      mappedExercises.length > 0
+        ? mappedExercises
+        : (fallbackDay?.exercises ?? []).slice(0, d.isRestDay ? 1 : 6);
 
     return {
-      dayIndex: d.dayIndex,
-      dayLabel: d.dayLabel,
-      title: d.title,
-      targetMuscle: d.targetMuscle,
-      durationMin: d.durationMin,
-      isRestDay: d.isRestDay,
-      warmupTitle: d.warmupTitle,
-      warmupDrills: d.warmupDrills.map((w, idx): WarmupDrill => ({
-        id: `d${d.dayIndex}-v${variationSeed}-w${idx}`,
-        name: w.name,
-        prescription: w.prescription,
-        completed: false,
-      })),
+      dayIndex: typeof d.dayIndex === 'number' ? d.dayIndex : mapIdx,
+      dayLabel: d.dayLabel || fallbackDay?.dayLabel || `Day ${mapIdx + 1}`,
+      title: d.title || fallbackDay?.title || `Day ${mapIdx + 1}`,
+      targetMuscle: d.targetMuscle || fallbackDay?.targetMuscle || 'Full Body',
+      durationMin: typeof d.durationMin === 'number' ? d.durationMin : 50,
+      isRestDay: Boolean(d.isRestDay),
+      warmupTitle: d.warmupTitle || fallbackDay?.warmupTitle || '5-Min Activation Warm-Up',
+      warmupDrills: (Array.isArray(d.warmupDrills) ? d.warmupDrills : []).map(
+        (w, idx): WarmupDrill => ({
+          id: `d${d.dayIndex}-v${variationSeed}-w${idx}`,
+          name: w.name,
+          prescription: w.prescription,
+          completed: false,
+        })
+      ),
       exercises: finalExercises,
     };
   });
@@ -148,10 +142,16 @@ export async function generateAthleteBlueprint(
   const avoidExercises = (input.previousSplit ?? [])
     .flatMap((d) => d.exercises.map((e) => e.name))
     .slice(0, 16);
+  const currentSplitSummary = (input.previousSplit ?? []).map((d) => ({
+    dayIndex: d.dayIndex,
+    dayLabel: d.dayLabel,
+    title: d.title,
+    exercises: d.exercises.map((e) => e.name),
+  }));
 
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 14000);
+    const timer = setTimeout(() => controller.abort(), 45000);
 
     const response = await fetch('/api/blueprint', {
       method: 'POST',
@@ -163,7 +163,8 @@ export async function generateAthleteBlueprint(
         metrics: input.metrics,
         schedule: input.schedule,
         variationSeed: seed,
-        avoidExercises,
+        avoidExercises: customInstruction ? [] : avoidExercises,
+        currentSplitSummary: customInstruction ? currentSplitSummary : undefined,
         customInstruction,
       }),
       signal: controller.signal,
@@ -186,10 +187,21 @@ export async function generateAthleteBlueprint(
           deterministicSplit,
           seed
         );
-        // Guarantee distinctness from previousSplit if regenerating
-        const prevFirst = input.previousSplit?.[0]?.exercises?.[0]?.name;
-        const nextFirst = hydrated[0]?.exercises?.[0]?.name;
-        if (!prevFirst || prevFirst !== nextFirst || seed === 0) {
+        if (customInstruction || seed === 0) {
+          return {
+            split: hydrated,
+            quotes: data.blueprint.quotes as string[],
+            source: 'gemini-2.5-flash',
+          };
+        }
+
+        const prevSig = (input.previousSplit ?? [])
+          .map((d) => d.exercises.map((e) => e.name).join('|'))
+          .join('::');
+        const nextSig = hydrated
+          .map((d) => d.exercises.map((e) => e.name).join('|'))
+          .join('::');
+        if (!prevSig || prevSig !== nextSig) {
           return {
             split: hydrated,
             quotes: data.blueprint.quotes as string[],
@@ -199,7 +211,7 @@ export async function generateAthleteBlueprint(
       }
     }
   } catch {
-    // Static hosts or offline: check optional Vite key or use rich multi-split engine
+    // Static hosts or offline: fall back cleanly to local adaptive engine
   }
 
   return {

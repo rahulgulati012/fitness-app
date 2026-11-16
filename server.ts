@@ -16,6 +16,7 @@ interface BlueprintRequest {
   variationSeed?: number;
   avoidExercises?: string[];
   customInstruction?: string;
+  currentSplitSummary?: { dayIndex: number; dayLabel: string; title: string; exercises: string[] }[];
   metrics: {
     heightCm: number;
     weightKg: number;
@@ -42,6 +43,12 @@ function getGeminiClient(): GoogleGenAI | null {
       },
     },
   });
+}
+
+function extractRawJson(text: string): string {
+  const trimmed = text.trim();
+  const fenceMatch = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  return fenceMatch ? fenceMatch[1].trim() : trimmed;
 }
 
 const blueprintSchema = {
@@ -73,7 +80,7 @@ const blueprintSchema = {
           exercises: {
             type: Type.ARRAY,
             description:
-              "For training days (isRestDay: false), return STRICTLY 6 distinct, properly sequenced exercises (2 primary compounds, 2 secondary hypertrophy movements, 2 targeted isolation/finisher movements). Each exercise cue MUST include a clear progressive overload instruction (e.g., 'Increase weight by 2.5kg when you hit max reps'). For recovery days (isRestDay: true), return 1-2 gentle recovery/TVA activities.",
+              "Dynamic list of exercises for this day. Length is COMPLETELY FLEXIBLE: create, add, or remove exercises (e.g., 5, 6, 7, 8+ exercises) to fulfill the user's custom request (such as appending a Walking exercise at the end). Each exercise cue MUST include a progressive overload instruction. For rest days (isRestDay: true), return 1-2 gentle recovery/TVA activities or any requested cardio/walk.",
             items: {
               type: Type.OBJECT,
               properties: {
@@ -125,7 +132,7 @@ async function startServer() {
   app.use(express.json({ limit: "1mb" }));
 
   app.get("/api/health", (_req, res) => {
-    res.json({ ok: true, service: "kinetix-api" });
+    res.json({ ok: true, service: "gym-freak-api" });
   });
 
   app.post("/api/blueprint", async (req, res) => {
@@ -142,18 +149,38 @@ async function startServer() {
     }
 
     const seed = body.variationSeed ?? 0;
+    const customInput =
+      typeof body.customInstruction === "string" ? body.customInstruction.trim().slice(0, 400) : "";
+    const hasCustomRequest = customInput.length > 0;
+
     const avoidClause =
-      Array.isArray(body.avoidExercises) && body.avoidExercises.length > 0
-        ? `\n7. IMPORTANT REGENERATION RULE (Variation #${seed}): Pick fresh exercise variations and different warm-up drills; avoid repeating these previous primary exercises: ${body.avoidExercises.slice(0, 14).join(", ")}.`
+      !hasCustomRequest && Array.isArray(body.avoidExercises) && body.avoidExercises.length > 0
+        ? `\n7. REGENERATION VARIATION RULE (Variation #${seed}): Introduce fresh exercise variations and warm-up drills; avoid repeating these previous primary exercises: ${body.avoidExercises.slice(0, 14).join(", ")}.`
         : "";
-    const customRequest =
-      typeof body.customInstruction === "string" && body.customInstruction.trim()
-        ? `\n8. ATHLETE CUSTOM TRAINING PREFERENCE (STRICTLY HONOR THIS): "${body.customInstruction.trim().slice(0, 280)}" — adjust exercises, equipment selection, and volume emphasis accordingly while keeping the 6-exercise structure, TVA/Stomach Vacuum drills, and progressive overload cues.`
+
+    const currentSplitContext =
+      hasCustomRequest && Array.isArray(body.currentSplitSummary) && body.currentSplitSummary.length > 0
+        ? `\nCurrent Athlete Split Context (for reference when adding, removing, or restructuring per the custom request):\n${body.currentSplitSummary
+            .map(
+              (d) =>
+                `- ${d.dayLabel} (dayIndex ${d.dayIndex}): ${d.title} -> [${d.exercises.join(", ")}]`
+            )
+            .join("\n")}\n`
         : "";
+
+    const priorityCustomHeader = hasCustomRequest
+      ? `USER'S CUSTOM REQUEST (CRITICAL - HIGHEST PRIORITY): ${customInput}
+CRITICAL EXECUTION MANDATE:
+- You MUST fulfill the USER'S CUSTOM REQUEST above above all default templates.
+- DO NOT just rearrange a static list of exercises. CREATE brand new exercise objects, ADD exercises (increasing the exercise array length as needed), or REMOVE exercises to match the request exactly.
+- If the user asks to "add walking at the end" (or any finisher/cardio/exercise), you MUST generate and append a brand new exercise object for "Walking" (e.g., name: "Brisk Incline Walking", muscle: "Cardio & Conditioning", setsCount: 1, targetReps: 20, restSeconds: 60, suggestedWeightKg: 0) at the END of each training day's exercises array.
+- You ARE ALLOWED to completely restructure the 7-day split (e.g., shifting which muscles are trained on Monday vs. Tuesday, adding or removing muscle days) if the custom request demands it.
+`
+      : "";
 
     const splitRule =
       body.gender === "male"
-        ? `2. MALE 6-DAY PUSH/PULL/LEGS (PPL) SPLIT:
+        ? `2. BASELINE MALE 6-DAY PUSH/PULL/LEGS (PPL) SPLIT (unless USER'S CUSTOM REQUEST asks to restructure it):
    - Mon (dayIndex 0, isRestDay: false): Push A — upper chest density (Incline Dumbbell Press / Incline Barbell Press), shoulder capping (Overhead Press, Lateral Raises), triceps.
    - Tue (dayIndex 1, isRestDay: false): Pull A — lat width (Weighted/Wide-Grip Pull-Ups, Lat Pulldown), upper/mid-back rows, rear delts, biceps.
    - Wed (dayIndex 2, isRestDay: false): Legs A — Barbell Squats, Romanian Deadlifts (RDLs), leg curls/extensions, calves, core.
@@ -162,7 +189,7 @@ async function startServer() {
    - Sat (dayIndex 5, isRestDay: false): Legs B — RDLs / Trap Bar / Hack Squat, Bulgarian Split Squats, hamstring curls, calves, core.
    - Sun (dayIndex 6, isRestDay: true): Active Recovery & TVA Mobility.
    - Tailor exercise selection and intensity specifically to "${body.goal}".`
-        : `2. FEMALE 5-DAY UPPER/LOWER SPLIT:
+        : `2. BASELINE FEMALE 5-DAY UPPER/LOWER SPLIT (unless USER'S CUSTOM REQUEST asks to restructure it):
    - Mon (dayIndex 0, isRestDay: false): Lower A — heavily biased toward glute hypertrophy and hamstring development (Barbell Hip Thrusts, Romanian Deadlifts, Bulgarian Split Squats, Leg Curls, Hip Abductions).
    - Tue (dayIndex 1, isRestDay: false): Upper A — focused on back width/posture and shoulder toning (Lat Pulldowns, Cable Rows, Shoulder Press, Lateral Raises, Face Pulls, Arms) WITHOUT excessive chest volume.
    - Wed (dayIndex 2, isRestDay: true): Active Recovery & TVA Vacuum Mobility.
@@ -172,7 +199,8 @@ async function startServer() {
    - Sun (dayIndex 6, isRestDay: true): Complete CNS Reset & Restorative Walk.
    - Tailor exercise selection and rep cadence specifically to "${body.goal}".`;
 
-    const prompt = `Create an advanced, scientifically structured 7-day hypertrophy training split (Variation #${seed}) and 20 universal motivational quotes.
+    const prompt = `${priorityCustomHeader}${currentSplitContext}Generate a tailored, scientifically structured 7-day training split (Variation #${seed}) and 20 universal motivational quotes.
+
 Athlete Metrics & Goal:
 - Gender: ${body.gender}
 - Physique Goal: ${body.goal}
@@ -183,12 +211,19 @@ Athlete Metrics & Goal:
 Rules:
 1. Return exactly 7 days in "split" ordered dayIndex 0 (Mon) through 6 (Sun) with dayLabel "Mon".."Sun".
 ${splitRule}
-3. CORE & STABILITY (ALL USERS): Inject TVA (Transverse Abdominis) engagement work and Stomach Vacuum holds into the warmupDrills (e.g., "TVA Rib-Tuck & Stomach Vacuum Hold: 3 x 20s full-exhale holds") or core slot on EVERY day.
-4. PROGRESSIVE OVERLOAD CUES: Every exercise "cue" MUST include a clear progressive overload instruction (for example: "Increase weight by 2.5kg when you hit max reps") alongside crisp biomechanics.
-5. STRICT 6-EXERCISE RULE: Every training day (isRestDay: false) MUST include 3-4 specific warmupDrills AND STRICTLY 6 distinct, properly sequenced exercises (2 primary compounds, 2 secondary hypertrophy movements, 2 targeted isolation/finisher movements) with realistic starter weights in kg, tempo (e.g., "3-1-1-0"), and restSeconds (45, 60, 90, 120, or 150). Recovery days (isRestDay: true) have 3 mobility/TVA warmupDrills and 1-2 gentle walk/TVA activities.
-6. STRICT NAMING CONVENTION: All routine titles, exercise names, cues, warmups, and all 20 "quotes" MUST use standard, professional fitness terminology ONLY. NEVER include any personal names, nicknames, pet names, or personal identifiers so the output is 100% universal for any squad member. Match the "${body.schedule?.vibe ?? "Confident & Indulging"}" tone.${avoidClause}${customRequest}`;
+3. CORE & STABILITY (ALL USERS): Inject TVA (Transverse Abdominis) engagement work and Stomach Vacuum holds into warmupDrills (e.g., "TVA Rib-Tuck & Stomach Vacuum Hold: 3 x 20s full-exhale holds") or a core slot on EVERY day.
+4. PROGRESSIVE OVERLOAD CUES: Every exercise "cue" MUST include a clear progressive overload instruction (e.g., "Increase weight by 2.5kg when you hit max reps") alongside crisp biomechanics.
+5. FLEXIBLE DYNAMIC EXERCISE ARRAY: Default training days (isRestDay: false) typically include 3-4 specific warmupDrills and around 6 distinct exercises, BUT the exercises array length is COMPLETELY FLEXIBLE — freely output 5, 6, 7, 8, or more exercises whenever needed to CREATE, ADD, or REMOVE movements requested by the user (e.g., if asked to "add walking at the end", append a brand new Walking exercise object at the end of the exercises array). Recovery days (isRestDay: true) have 2-3 mobility/TVA warmupDrills and 1-2 gentle activities.
+6. STRICT NAMING CONVENTION & RAW JSON: All routine titles, exercise names, cues, warmups, and all 20 "quotes" MUST use standard, professional fitness terminology ONLY (no personal names or identifiers). Match the "${body.schedule?.vibe ?? "Confident & Indulging"}" tone. Output ONLY raw, valid JSON matching the Day -> Exercises -> Sets/Reps schema with NO markdown formatting and NO code blocks.${avoidClause}`;
 
-    const modelsToTry = ["gemini-2.5-flash", "gemini-4-hydrogen"];
+    const systemInstruction = [
+      "You are a dynamic AI fitness coach. DO NOT just rearrange existing exercises. You must CREATE, ADD, or REMOVE exercises to perfectly match the user's custom request. The length of the exercise array is completely flexible.",
+      "If the user asks to 'add walking at the end', you MUST generate and append a brand new exercise object for 'Walking' at the end of the day's routine.",
+      "You are allowed to restructure the 7-day split (e.g., adjusting which muscles are worked on Monday vs. Tuesday) if the user's custom request demands it.",
+      "Output ONLY raw, valid JSON matching the Day -> Exercises -> Sets/Reps blueprint schema. Never include markdown formatting, backticks, or code blocks in your response. Never include personal identifiers or pet names.",
+    ].join(" ");
+
+    const modelsToTry = ["gemini-4-hydrogen", "gemini-2.5-flash"];
 
     for (const modelName of modelsToTry) {
       try {
@@ -196,14 +231,13 @@ ${splitRule}
           model: modelName,
           contents: prompt,
           config: {
-            systemInstruction:
-              "You are an elite strength, biomechanics, and hypertrophy coach. Respond strictly with valid JSON matching the schema. Never include personal identifiers or pet names.",
+            systemInstruction,
             responseMimeType: "application/json",
             responseSchema: blueprintSchema,
           },
         });
 
-        const rawText = (response.text ?? "").trim();
+        const rawText = extractRawJson(response.text ?? "");
         if (!rawText) continue;
         const parsed = JSON.parse(rawText);
         if (Array.isArray(parsed.split) && parsed.split.length === 7 && Array.isArray(parsed.quotes)) {
@@ -211,7 +245,7 @@ ${splitRule}
           return;
         }
       } catch (err) {
-        console.error(`[KINETIX] Gemini error (${modelName}):`, err instanceof Error ? err.message : err);
+        console.error(`[Gym Freak] Gemini error (${modelName}):`, err instanceof Error ? err.message : err);
       }
     }
 

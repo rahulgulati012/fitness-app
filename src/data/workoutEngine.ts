@@ -2946,7 +2946,7 @@ export function buildVariedSplit(
       completed: false,
     }));
 
-    const exercises: ExercisePlan[] = day.exerciseSlots.map((slot, slotIdx) => {
+    const baseExercises: ExercisePlan[] = day.exerciseSlots.map((slot, slotIdx) => {
       const pickIdx = (seed + slotIdx) % slot.length;
       const chosen = slot[pickIdx];
       const scaledWeight = roundWeight(chosen.baseWeightKg * scale);
@@ -2968,6 +2968,28 @@ export function buildVariedSplit(
         ? adaptExerciseForInstruction(baseExercise, cleanInstruction, gender, scale)
         : baseExercise;
     });
+
+    const exercises = [...baseExercises];
+    if (cleanInstruction && !day.isRestDay) {
+      const wantsWalking =
+        cleanInstruction.includes('walk') &&
+        (cleanInstruction.includes('add') ||
+          cleanInstruction.includes('end') ||
+          cleanInstruction.includes('finish') ||
+          cleanInstruction.includes('include'));
+      if (wantsWalking && !exercises.some((e) => e.name.toLowerCase().includes('walk'))) {
+        const walkId = `d${day.dayIndex}-v${seed}-e${exercises.length}`;
+        exercises.push({
+          id: walkId,
+          name: 'Brisk Incline Walking (Cooldown)',
+          muscle: 'Cardio & Fat Oxidation',
+          cue: 'Maintain tall posture and steady Zone-2 stride for 20 mins. Increase incline by 1% or duration by 2 mins weekly.',
+          tempo: 'Steady',
+          restSeconds: 60,
+          sets: makeSets(1, 0, 20, walkId),
+        });
+      }
+    }
 
     return {
       dayIndex: day.dayIndex,
