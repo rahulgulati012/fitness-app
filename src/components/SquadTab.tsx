@@ -231,8 +231,15 @@ export function SquadTab({
         </div>
       </section>
 
-      {/* Search Athletes Bar & Add Friends */}
+      {/* Add Friends Search & Discovery */}
       <section className="bg-[#12141C]/85 backdrop-blur-xl border border-white/[0.08] rounded-3xl p-4 shadow-lg space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <UserPlus className="w-4 h-4" style={{ color: theme.primary }} />
+            <h2 className="text-xs font-bold text-white">Add Friends</h2>
+          </div>
+          <span className="text-[10px] text-white/50">Search by name or @username</span>
+        </div>
         <div className="relative">
           <Search className="w-4 h-4 text-white/45 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
@@ -240,7 +247,7 @@ export function SquadTab({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search athletes by name, @username, or ID..."
-            aria-label="Search athletes"
+            aria-label="Add Friends search"
             className="w-full min-h-[46px] pl-10 pr-9 bg-[#1A1D28] border border-white/10 rounded-2xl text-xs text-white placeholder:text-white/40 focus:outline-none focus:border-white/25"
           />
           {searchQuery && (

@@ -1,18 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
   Bell,
-  Check,
-  Loader2,
   Lock,
   LogOut,
   RefreshCw,
-  Search,
   Sliders,
   Sparkles,
-  UserMinus,
-  UserPlus,
-  Users,
-  X,
 } from 'lucide-react';
 import type {
   Gender,
@@ -25,15 +18,9 @@ import {
   calculateBmi,
   calculateSleepTargetHours,
   calculateWaterTargetMl,
-  getShortGoalLabel,
-  resolveTheme,
 } from '../services/theme';
-import { FEMALE_GOALS, getTodaySplitDayIndex, MALE_GOALS } from '../services/db';
+import { FEMALE_GOALS, MALE_GOALS } from '../services/db';
 import { generateAthleteBlueprint } from '../services/blueprintFallback';
-import {
-  fetchDiscoverableSupabaseAthletes,
-  searchSupabaseAthletes,
-} from '../services/supabaseSync';
 import { AthleteAvatar } from './AthleteAvatar';
 import { PWAInstallButton } from './PWAInstallButton';
 
@@ -87,7 +74,6 @@ function formatLockCountdown(msRemaining: number): string {
 
 interface ProfileTabProps {
   user: UserProfile;
-  allUsers: UserProfile[];
   theme: ThemeTokens;
   onUpdateProfileAndPlan: (updated: {
     gender: Gender;
@@ -101,9 +87,6 @@ interface ProfileTabProps {
   }) => Promise<void> | void;
   onUpdateReminders: (reminders: ReminderSettings) => void;
   onTestReminder: (kind: 'workout' | 'hydration' | 'bedtime') => void;
-  onToggleSquadMember: (friendId: string) => Promise<void> | void;
-  onSyncRemoteUsers?: (users: UserProfile[]) => void;
-  onSupabaseError?: (error: string | null) => void;
   onSignOut: () => void;
 }
 
@@ -138,14 +121,10 @@ function ToggleSwitch({
 
 export function ProfileTab({
   user,
-  allUsers,
   theme,
   onUpdateProfileAndPlan,
   onUpdateReminders,
   onTestReminder,
-  onToggleSquadMember,
-  onSyncRemoteUsers,
-  onSupabaseError,
   onSignOut,
 }: ProfileTabProps) {
   const goalOptions = user.gender === 'female' ? FEMALE_GOALS : MALE_GOALS;
@@ -165,13 +144,6 @@ export function ProfileTab({
     readRegenLimit(user.id)
   );
   const [nowMs, setNowMs] = useState(() => Date.now());
-
-  // Add Friends search state
-  const [friendQuery, setFriendQuery] = useState('');
-  const [searchingFriends, setSearchingFriends] = useState(false);
-  const [friendSearchResults, setFriendSearchResults] = useState<UserProfile[] | null>(null);
-  const [discoverUsers, setDiscoverUsers] = useState<UserProfile[]>([]);
-  const [loadingDiscover, setLoadingDiscover] = useState(false);
 
   // Refresh lock countdown while locked
   useEffect(() => {
@@ -198,64 +170,9 @@ export function ProfileTab({
     return () => clearInterval(interval);
   }, [regenLimit.lockUntil, user.id]);
 
-  // Load discoverable athletes for Profile "Add Friends" card
-  useEffect(() => {
-    let cancelled = false;
-    setLoadingDiscover(true);
-    fetchDiscoverableSupabaseAthletes(user.id)
-      .then(({ results, error }) => {
-        if (cancelled) return;
-        if (error) {
-          onSupabaseError?.(error);
-        }
-        setDiscoverUsers(results);
-        if (results.length > 0) {
-          onSyncRemoteUsers?.(results);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingDiscover(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [user.id]);
-
-  // Live Supabase search in Profile "Add Friends"
-  useEffect(() => {
-    const clean = friendQuery.trim();
-    if (!clean) {
-      setFriendSearchResults(null);
-      setSearchingFriends(false);
-      return;
-    }
-
-    let cancelled = false;
-    setSearchingFriends(true);
-    const timer = setTimeout(async () => {
-      const { results, error } = await searchSupabaseAthletes(clean, user.id);
-      if (!cancelled) {
-        if (error) {
-          onSupabaseError?.(error);
-        }
-        setFriendSearchResults(results);
-        setSearchingFriends(false);
-        if (results.length > 0) {
-          onSyncRemoteUsers?.(results);
-        }
-      }
-    }, 220);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [friendQuery, user.id]);
-
   const bmi = calculateBmi(heightCm, weightKg);
   const waterTarget = calculateWaterTargetMl(weightKg);
   const sleepTarget = calculateSleepTargetHours(user.gender);
-  const todayIdx = getTodaySplitDayIndex();
 
   const attemptsRemaining = Math.max(0, MAX_DAILY_REGENS - regenLimit.count);
   const lockCountdownLabel =
@@ -319,16 +236,6 @@ export function ProfileTab({
     }
   };
 
-  // Candidates to render in Add Friends card (search results or discoverable non-friends + friends)
-  const cleanFriendQuery = friendQuery.trim();
-  const visibleFriendCandidates = cleanFriendQuery
-    ? friendSearchResults ?? []
-    : discoverUsers.filter((u) => !user.squadIds.includes(u.id)).slice(0, 6);
-
-  const addedFriends = allUsers.filter(
-    (u) => !u.id.startsWith('demo-') && user.squadIds.includes(u.id)
-  );
-
   return (
     <div className="px-4 pt-4 pb-36 space-y-4">
       {/* Athlete Summary Card */}
@@ -348,201 +255,6 @@ export function ProfileTab({
             {user.goal} · BMI {bmi} · {waterTarget.toLocaleString()} ml/day
           </p>
         </div>
-      </section>
-
-      {/* Add Friends & Friend-Only Privacy Card */}
-      <section className="bg-[#12141C]/85 backdrop-blur-xl border border-white/[0.08] rounded-3xl p-5 shadow-lg space-y-3.5">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4" style={{ color: theme.secondary }} />
-            <h2 className="text-sm font-bold text-white">Add Friends</h2>
-          </div>
-          <span className="text-[11px] font-mono-tabular text-white/55">
-            {user.squadIds.length} Added
-          </span>
-        </div>
-
-        <div className="relative">
-          <Search className="w-4 h-4 text-white/45 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            value={friendQuery}
-            onChange={(e) => setFriendQuery(e.target.value)}
-            placeholder="Search registered athletes by name or @username..."
-            aria-label="Search friends by name or username"
-            className="w-full min-h-[44px] pl-10 pr-9 bg-[#1A1D28] border border-white/10 rounded-2xl text-xs text-white placeholder:text-white/40 focus:outline-none focus:border-white/25"
-          />
-          {friendQuery && (
-            <button
-              type="button"
-              onClick={() => setFriendQuery('')}
-              aria-label="Clear friend search"
-              className="absolute right-2 top-1/2 -translate-y-1/2 min-w-[30px] min-h-[30px] flex items-center justify-center text-white/50 hover:text-white"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* Search Results or Discover List */}
-        <div className="space-y-2">
-          {cleanFriendQuery && (
-            <div className="flex items-center justify-between text-[11px] text-white/55">
-              <span>Search Results ({visibleFriendCandidates.length})</span>
-              {searchingFriends && (
-                <span className="inline-flex items-center gap-1">
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  <span>Searching...</span>
-                </span>
-              )}
-            </div>
-          )}
-
-          {!cleanFriendQuery && loadingDiscover && visibleFriendCandidates.length === 0 && (
-            <div className="flex items-center gap-2 text-xs text-white/55 py-1">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              <span>Finding registered athletes...</span>
-            </div>
-          )}
-
-          {cleanFriendQuery && !searchingFriends && visibleFriendCandidates.length === 0 && (
-            <p className="text-xs text-white/50 py-1">
-              No registered athlete matched &quot;{friendQuery}&quot;.
-            </p>
-          )}
-
-          {visibleFriendCandidates.map((candidate) => {
-            const isFriend = user.squadIds.includes(candidate.id);
-            const cTheme = resolveTheme(candidate.gender);
-            const splitTitle = (candidate.split[todayIdx] ?? candidate.split[0])?.title.replace(
-              /^Day\s+\d+:\s*/i,
-              ''
-            );
-
-            return (
-              <div
-                key={candidate.id}
-                className="p-2.5 rounded-2xl bg-[#1A1D28]/90 border border-white/[0.08] flex items-center justify-between gap-2.5"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <AthleteAvatar
-                    name={candidate.name}
-                    avatarUrl={candidate.avatarUrl}
-                    gender={candidate.gender}
-                    sizeClass="w-9 h-9"
-                  />
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <p className="text-xs font-bold text-white truncate">{candidate.name}</p>
-                      <span
-                        className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap"
-                        style={{ backgroundColor: cTheme.softBg, color: cTheme.secondary }}
-                      >
-                        {candidate.gender === 'female' ? 'Female' : 'Male'}
-                      </span>
-                    </div>
-
-                    {isFriend ? (
-                      <p className="text-[10px] text-white/60 truncate mt-0.5">
-                        {getShortGoalLabel(candidate.goal)} · {splitTitle ?? 'Active'} ·{' '}
-                        {candidate.dailyLog.workoutCompleted ? 'Crushed It' : 'In Progress'}
-                      </p>
-                    ) : (
-                      <p className="text-[10px] text-white/50 truncate mt-0.5">
-                        Add as a friend to view workout progress
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => onToggleSquadMember(candidate.id)}
-                  className="min-h-[36px] px-3 rounded-xl text-[11px] font-semibold flex items-center gap-1 shrink-0 transition-all active:scale-95"
-                  style={
-                    isFriend
-                      ? {
-                          backgroundColor: 'rgba(255,255,255,0.08)',
-                          color: 'rgba(255,255,255,0.85)',
-                          border: '1px solid rgba(255,255,255,0.12)',
-                        }
-                      : {
-                          background: theme.gradientCss,
-                          color: '#FFFFFF',
-                        }
-                  }
-                >
-                  {isFriend ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Added</span>
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-3.5 h-3.5" />
-                      <span>+ Add Friend</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Added Friends Quick List (when not actively filtering) */}
-        {!cleanFriendQuery && addedFriends.length > 0 && (
-          <div className="pt-2 border-t border-white/[0.06] space-y-2">
-            <p className="text-[11px] font-semibold text-white/55">
-              Your Friends ({addedFriends.length})
-            </p>
-            <div className="space-y-1.5">
-              {addedFriends.map((friend) => {
-                const fTheme = resolveTheme(friend.gender);
-                return (
-                  <div
-                    key={friend.id}
-                    className="p-2 rounded-2xl bg-[#090A0F]/70 border border-white/[0.06] flex items-center justify-between gap-2"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <AthleteAvatar
-                        name={friend.name}
-                        avatarUrl={friend.avatarUrl}
-                        gender={friend.gender}
-                        sizeClass="w-8 h-8"
-                      />
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-semibold text-white truncate">
-                            {friend.name}
-                          </span>
-                          <span
-                            className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md"
-                            style={{ backgroundColor: fTheme.softBg, color: fTheme.secondary }}
-                          >
-                            {friend.gender === 'female' ? 'Female' : 'Male'}
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-white/55 truncate">
-                          {friend.streakDays}d streak · {friend.dailyLog.waterMl}ml ·{' '}
-                          {friend.dailyLog.steps.toLocaleString()} steps
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => onToggleSquadMember(friend.id)}
-                      aria-label={`Remove ${friend.name} from friends`}
-                      className="min-h-[32px] px-2.5 rounded-xl bg-[#1A1D28] border border-white/10 text-[10px] font-semibold text-white/75 hover:text-white flex items-center gap-1 shrink-0"
-                    >
-                      <UserMinus className="w-3 h-3" />
-                      <span>Remove</span>
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </section>
 
       {/* Body Metrics & Goal Editor (Strictly Gender-Filtered) */}

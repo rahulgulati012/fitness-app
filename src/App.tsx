@@ -787,7 +787,6 @@ export default function App() {
                 <ProfileTab
                   key={activeUser.id}
                   user={activeUser}
-                  allUsers={users}
                   theme={theme}
                   onUpdateProfileAndPlan={async (patch) => {
                     const updated = db.updateUser(activeUser.id, (u) => ({
@@ -824,12 +823,6 @@ export default function App() {
                     }
                   }}
                   onTestReminder={handleTestReminder}
-                  onToggleSquadMember={handleToggleSquadMember}
-                  onSyncRemoteUsers={(remoteUsers) => {
-                    const merged = db.mergeRemoteUsers(remoteUsers);
-                    setUsers(merged);
-                  }}
-                  onSupabaseError={(err) => setSupabaseErrorBanner(err)}
                   onSignOut={handleSignOut}
                 />
               )}
