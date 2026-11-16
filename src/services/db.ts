@@ -40,8 +40,8 @@ export const FEMALE_GOALS: {
 }[] = [
   {
     title: 'Hourglass & Glute Sculpt',
-    subtitle: '5-day Upper/Lower split biased toward glute hypertrophy, hamstrings & TVA vacuum.',
-    focus: 'Hip thrusts, RDLs & Bulgarians · Back & shoulder upper toning',
+    subtitle: '6-day calorie deficit blueprint with glutes, hamstrings, pull, quads, core & LISS treadmill.',
+    focus: 'Hip thrusts, RDLs, lat pulldowns, quads, TVA core & daily incline treadmill',
   },
   {
     title: 'Athletic & Toned',

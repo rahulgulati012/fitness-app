@@ -189,6 +189,16 @@ CRITICAL EXECUTION MANDATE:
    - Sat (dayIndex 5, isRestDay: false): Legs B — RDLs / Trap Bar / Hack Squat, Bulgarian Split Squats, hamstring curls, calves, core.
    - Sun (dayIndex 6, isRestDay: true): Active Recovery & TVA Mobility.
    - Tailor exercise selection and intensity specifically to "${body.goal}".`
+        : body.goal === "Hourglass & Glute Sculpt"
+        ? `2. BASELINE FEMALE 6-DAY CALORIE DEFICIT BLUEPRINT ("Hourglass & Glute Sculpt", unless USER'S CUSTOM REQUEST asks to restructure it):
+   - Every day MUST start with a first exercise named "Warm Up" (mobility & TVA activation) and end with a final exercise named "Treadmill" (LISS incline walk).
+   - Mon (dayIndex 0, isRestDay: false): 1 Warm Up, 5 Glutes & Hamstrings exercises, 1 Core exercise, 1 Treadmill (8 total).
+   - Tue (dayIndex 1, isRestDay: false): 1 Warm Up, 5 Pull exercises (back/rear delts/biceps), 1 Core exercise, 1 Treadmill (8 total).
+   - Wed (dayIndex 2, isRestDay: false): 1 Warm Up, 5 Pull exercises (back/rear delts/biceps), 1 Core exercise, 1 Treadmill (8 total).
+   - Thu (dayIndex 3, isRestDay: false): 1 Warm Up, 5 Quads exercises, 1 Core exercise, 1 Treadmill (8 total).
+   - Fri (dayIndex 4, isRestDay: false): 1 Warm Up, 2 Push exercises, 2 Pull exercises, 2 Core exercises, 1 Treadmill (8 total).
+   - Sat (dayIndex 5, isRestDay: false): 1 Warm Up, 5 Glutes & Hamstrings exercises, 1 Core exercise, 1 Treadmill (8 total).
+   - Sun (dayIndex 6, isRestDay: true): 1 Warm Up (restorative mobility) and 1 Treadmill (gentle LISS recovery walk).`
         : `2. BASELINE FEMALE 5-DAY UPPER/LOWER SPLIT (unless USER'S CUSTOM REQUEST asks to restructure it):
    - Mon (dayIndex 0, isRestDay: false): Lower A — heavily biased toward glute hypertrophy and hamstring development (Barbell Hip Thrusts, Romanian Deadlifts, Bulgarian Split Squats, Leg Curls, Hip Abductions).
    - Tue (dayIndex 1, isRestDay: false): Upper A — focused on back width/posture and shoulder toning (Lat Pulldowns, Cable Rows, Shoulder Press, Lateral Raises, Face Pulls, Arms) WITHOUT excessive chest volume.

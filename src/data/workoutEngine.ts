@@ -78,414 +78,539 @@ function ex(
 }
 
 // ============================================================================
-// FEMALE SPLITS: 5-DAY UPPER / LOWER HYPERTROPHY SPLITS (+ 2 RECOVERY DAYS)
-// Heavily biased toward glute hypertrophy & hamstring development;
-// Upper days emphasize back & shoulder toning without excessive chest volume.
-// Every day includes TVA engagement + Stomach Vacuum work & progressive overload cues.
+// FEMALE SPLITS: HOURGLASS & GLUTE SCULPT (6-DAY CALORIE DEFICIT BLUEPRINT)
+// + 5-DAY UPPER / LOWER HYPERTROPHY SPLITS FOR ATHLETIC & LEAN GOALS
+// All text is standard, universal fitness terminology with progressive overload cues.
 // ============================================================================
 
 const FEMALE_HOURGLASS_SPLIT: DayBlueprint[] = [
+  // Day 1: 1 Warm Up, 5 Glutes & Hamstrings, 1 Core, 1 Treadmill
   {
     dayIndex: 0,
     dayLabel: 'Mon',
     titleVariants: [
-      'Lower A: Heavy Hip Thrusts & Glute Hypertrophy',
-      'Lower A: Posterior Chain & Glute Max Focus',
-      'Lower A: Glute Bridge Power & Hamstrings',
+      'Day 1: Glutes & Hamstrings Deficit Sculpt',
+      'Day 1: Glutes, Hamstrings & Core Conditioning',
+      'Day 1: Posterior Chain & LISS Treadmill',
     ],
-    targetMuscle: 'Lower Body · Glutes & Hamstrings',
-    durationMin: 55,
+    targetMuscle: 'Glutes, Hamstrings & Core',
+    durationMin: 65,
     isRestDay: false,
     warmupTitleVariants: [
-      '5-Min TVA Vacuum & Glute Activation',
-      '5-Min Deep Core & Posterior Primer',
-      '5-Min Hip Mobility & TVA Brace',
+      '5-Min Mobility & Glute Activation',
+      '5-Min Lower Mobility & TVA Primer',
+      '5-Min Hip Capsule & Core Warm-Up',
     ],
     warmupPools: [
       [
         { name: 'Supine TVA Engagement & Stomach Vacuum', prescription: '3 x 20s full-exhale holds' },
-        { name: 'Banded Lateral Monster Walks', prescription: '2 x 16 steps each side' },
-        { name: 'Bodyweight Frog Pumps', prescription: '2 x 20 controlled reps' },
         { name: '90/90 Hip Internal Rotations', prescription: '8 slow switches per side' },
+        { name: 'Banded Lateral Monster Walks', prescription: '2 x 16 steps each side' },
       ],
       [
         { name: 'Quadruped TVA Draw-In & Stomach Vacuum', prescription: '3 x 20s holds' },
-        { name: 'Banded Clamshell Hold + Pulse', prescription: '2 x 20 per side' },
-        { name: 'Single-Leg Glute Bridge March', prescription: '2 x 12 per leg' },
         { name: 'World Greatest Stretch', prescription: '6 reps per side' },
+        { name: 'Bodyweight Glute Bridge March', prescription: '2 x 12 per leg' },
       ],
       [
         { name: 'Dead Bug TVA Brace + Stomach Vacuum', prescription: '12 reps + 2 x 20s vacuum' },
         { name: 'Seated Banded Hip Abductions', prescription: '2 x 25 rapid reps' },
-        { name: 'Quadruped Fire Hydrants', prescription: '2 x 15 per side' },
         { name: 'Knee-to-Wall Ankle Rocks', prescription: '10 per side' },
       ],
     ],
     exerciseSlots: [
+      // 1. Warm Up
       [
-        ex('Barbell Hip Thrusts', 'Glute Max', 'Drive through heels, hold 1.5s lockout. Increase weight by 2.5kg when you hit max reps.', '2-1-1-1', 120, 4, 10, 75),
-        ex('Smith Machine Kas Glute Bridge', 'Glute Max Isolation', 'Vertical shins, controlled top pause. Add 2.5kg once all sets hit 12 clean reps.', '2-2-1-0', 90, 4, 12, 70),
-        ex('Single-Leg Barbell Hip Thrust', 'Unilateral Glutes', 'Keep pelvis level at lockout. Increase load by 2.5kg when hitting top target reps.', '2-1-1-1', 90, 3, 10, 40),
+        ex('Warm Up', 'Mobility & Activation', 'Perform 90/90 hip switches, leg swings, banded glute bridges, and 2 x 20s TVA vacuum holds to prime hips.', 'Controlled', 30, 1, 5, 0),
+        ex('Warm Up', 'Mobility & Activation', 'Complete cat-cow spinal waves, bodyweight frog pumps, ankle rocks, and deep core breath bracing.', 'Controlled', 30, 1, 5, 0),
+        ex('Warm Up', 'Mobility & Activation', 'Flow through world greatest stretch, banded lateral walks, and pelvic tilts before loading hips.', 'Controlled', 30, 1, 5, 0),
       ],
+      // 2. Glutes & Hamstrings #1
       [
-        ex('Romanian Deadlifts (RDLs)', 'Hamstrings & Glutes', 'Push hips straight back on 3s eccentric. Increase weight by 2.5kg when you hit max reps.', '3-1-1-0', 90, 4, 10, 50),
-        ex('Dumbbell Romanian Deadlift (RDLs)', 'Hamstrings & Glute Tie-In', 'Shave legs smoothly to mid-shin. Add 2.5kg per hand once all sets hit 12 reps.', '3-1-1-0', 90, 4, 12, 16),
-        ex('B-Stance Barbell RDL', 'Upper Glute Tie-In', '85% load on front heel. Increase weight by 2.5kg when target reps are mastered.', '3-1-1-0', 90, 3, 10, 45),
+        ex('Barbell Hip Thrusts', 'Glutes & Hamstrings', 'Drive through heels, hold 1.5s top lockout. Increase weight by 2.5kg when you hit max reps.', '2-1-1-1', 120, 4, 10, 75),
+        ex('Smith Machine Kas Glute Bridge', 'Glutes & Hamstrings', 'Vertical shins, controlled top pause. Add 2.5kg once all sets hit 12 clean reps.', '2-2-1-0', 90, 4, 12, 70),
+        ex('Single-Leg Barbell Hip Thrust', 'Glutes & Hamstrings', 'Keep pelvis level at lockout. Increase load by 2.5kg when hitting top target reps.', '2-1-1-1', 90, 3, 10, 40),
       ],
+      // 3. Glutes & Hamstrings #2
       [
-        ex('Bulgarian Split Squats (Glute Bias)', 'Glutes & Quads', 'Long stride with 15° torso lean. Increase dumbbell weight by 2.5kg when hitting max reps.', '3-1-1-0', 90, 3, 10, 12.5),
-        ex('Deficit Reverse Dumbbell Lunge', 'Glute Stretch & Quads', 'Step off 2-inch plate through heel. Add 2.5kg once all 3 sets hit 10 crisp reps.', '3-1-1-0', 75, 3, 10, 10),
-        ex('Wide-Stance Smith Split Squat', 'Glutes & Adductors', 'Sink deeply into lead hip. Increase weight by 2.5kg when you reach max reps.', '3-1-1-0', 75, 3, 10, 35),
+        ex('Romanian Deadlifts (RDLs)', 'Glutes & Hamstrings', 'Push hips straight back on 3s eccentric. Increase weight by 2.5kg when you hit max reps.', '3-1-1-0', 90, 4, 10, 50),
+        ex('Dumbbell Romanian Deadlifts (RDLs)', 'Glutes & Hamstrings', 'Shave legs smoothly to mid-shin. Add 2.5kg per hand once all sets hit 12 reps.', '3-1-1-0', 90, 4, 12, 16),
+        ex('B-Stance Barbell RDL', 'Glutes & Hamstrings', '85% load on front heel. Increase weight by 2.5kg when target reps are mastered.', '3-1-1-0', 90, 3, 10, 45),
       ],
+      // 4. Glutes & Hamstrings #3
       [
-        ex('Seated Leg Curl', 'Hamstrings', 'Control 3s eccentric return without lifting hips. Increase pin by 2.5kg at top reps.', '3-1-1-0', 60, 3, 12, 30),
-        ex('Lying Hamstring Curl', 'Hamstrings', 'Keep hips pressed into pad with 1s peak squeeze. Add 2.5kg when hitting 12 reps.', '3-1-1-1', 60, 3, 12, 25),
-        ex('45° Glute-Biased Back Extension', 'Upper Glutes & Hamstrings', 'Tuck chin, round upper back slightly, squeeze glutes. Progress by 2.5kg at 15 reps.', '2-1-1-1', 60, 3, 15, 10),
+        ex('Bulgarian Split Squats (Glute Bias)', 'Glutes & Hamstrings', 'Long stride with 15° torso lean. Increase dumbbell weight by 2.5kg when hitting max reps.', '3-1-1-0', 90, 3, 10, 12.5),
+        ex('Deficit Reverse Dumbbell Lunge', 'Glutes & Hamstrings', 'Step off 2-inch plate through heel. Add 2.5kg once all 3 sets hit 10 crisp reps.', '3-1-1-0', 75, 3, 10, 10),
+        ex('Cable Glute Pull-Through', 'Glutes & Hamstrings', 'Deep hip hinge and strong glute lockout. Add 2.5kg when hitting 15 clean reps.', '2-1-1-1', 60, 4, 15, 25),
       ],
+      // 5. Glutes & Hamstrings #4
       [
-        ex('Seated Hip Abduction (Forward Lean)', 'Glute Medius', 'Hold peak stretch outward for 1s every rep. Add 2.5kg when all sets reach 18 reps.', '2-1-2-0', 60, 4, 18, 45),
-        ex('Cable Glute Kickback (30° Outward)', 'Upper Glute Shelf', 'Sweep diagonally to match glute fibers. Progress load by 2.5kg once hitting 15 reps.', '2-1-1-1', 60, 3, 15, 12.5),
-        ex('Cable Standing Hip Abduction', 'Glute Medius', 'Keep torso upright with smooth outward sweep. Add 2.5kg when hitting max reps.', '2-1-1-1', 60, 3, 15, 7.5),
+        ex('Seated Leg Curl', 'Glutes & Hamstrings', 'Control 3s eccentric return without lifting hips. Increase pin by 2.5kg at top reps.', '3-1-1-0', 60, 3, 12, 30),
+        ex('Lying Hamstring Curl', 'Glutes & Hamstrings', 'Keep hips pressed into pad with 1s peak squeeze. Add 2.5kg when hitting 12 reps.', '3-1-1-1', 60, 3, 12, 25),
+        ex('45° Glute-Biased Back Extension', 'Glutes & Hamstrings', 'Tuck chin, round upper back slightly, squeeze glutes. Progress by 2.5kg at 15 reps.', '2-1-1-1', 60, 3, 15, 10),
       ],
+      // 6. Glutes & Hamstrings #5
       [
-        ex('Standing Calf Raise', 'Calves & Ankle Stability', 'Full 2s bottom stretch, crisp top lockout. Increase weight by 2.5kg at 15 clean reps.', '2-2-1-1', 45, 3, 15, 25),
-        ex('Dead Bug TVA Brace + Stomach Vacuum', 'Transverse Abdominis', 'Press lumbar spine flat and exhale completely; zero oblique bulk. Extend hold by 5s weekly.', '3-1-2-0', 45, 3, 12, 0),
-        ex('Weighted Dumbbell Frog Pump', 'Glute Medius & Max', 'Soles together, 1s peak squeeze. Add 2.5kg once 22 unbroken reps feel controlled.', '1-1-1-0', 45, 3, 22, 16),
+        ex('Seated Hip Abduction Machine', 'Glutes & Hamstrings', 'Hold peak outward pause for 1s every rep. Add 2.5kg when all sets reach 18 reps.', '2-1-2-0', 60, 4, 18, 45),
+        ex('Cable Glute Kickback (30° Outward)', 'Glutes & Hamstrings', 'Sweep diagonally to match glute fibers. Progress load by 2.5kg once hitting 15 reps.', '2-1-1-1', 60, 3, 15, 12.5),
+        ex('Cable Standing Hip Abduction', 'Glutes & Hamstrings', 'Keep torso upright with smooth outward sweep. Add 2.5kg when hitting max reps.', '2-1-1-1', 60, 3, 15, 7.5),
+      ],
+      // 7. Core #1
+      [
+        ex('Dead Bug TVA Brace & Stomach Vacuum', 'Core & TVA', 'Press lumbar spine flat, exhale fully drawing navel inward. Extend vacuum hold by 5s weekly.', '3-1-2-0', 45, 3, 12, 0),
+        ex('Cable Pallof Anti-Rotation Press', 'Core & TVA', 'Press handle straight out resisting twist; zero oblique bulk. Add 2.5kg at 14 clean reps.', '2-2-2-0', 45, 3, 14, 10),
+        ex('Pilates Leg Lowering & TVA Hold', 'Core & TVA', 'Maintain ribs tucked and lower back pinned cleanly. Progress slow 4s lowering weekly.', '4-1-1-0', 45, 3, 12, 0),
+      ],
+      // 8. Treadmill
+      [
+        ex('Treadmill', 'LISS Incline Cardio', 'Walk steadily at 10–12% incline and 4.5 km/h for 25 mins without holding rails; add 1% incline weekly.', 'LISS Steady', 60, 1, 25, 0),
+        ex('Treadmill', 'LISS Incline Cardio', 'Maintain upright Zone-2 stride at 8–10% incline for 25–30 mins to support calorie deficit recovery.', 'LISS Steady', 60, 1, 30, 0),
+        ex('Treadmill', 'LISS Incline Cardio', 'Brisk 12% incline walk keeping heart rate steady at 120–135 BPM; progress duration by 2 mins weekly.', 'LISS Steady', 60, 1, 25, 0),
       ],
     ],
   },
+
+  // Day 2: 1 Warm Up, 5 Pull, 1 Core, 1 Treadmill
   {
     dayIndex: 1,
     dayLabel: 'Tue',
     titleVariants: [
-      'Upper A: Back Width, Delts & Posture',
-      'Upper A: Lat Sweep & Capped Shoulders',
-      'Upper A: Upper Back Tone & TVA Core',
+      'Day 2: Pull Focus, Core & LISS Treadmill',
+      'Day 2: Back Width, Rear Delts & Treadmill',
+      'Day 2: Upper Pull Density & Deficit Cardio',
     ],
-    targetMuscle: 'Upper Body · Back, Shoulders & Arms',
-    durationMin: 48,
+    targetMuscle: 'Back, Rear Delts, Biceps & Core',
+    durationMin: 60,
     isRestDay: false,
     warmupTitleVariants: [
-      '5-Min TVA Vacuum & Thoracic Prep',
-      '5-Min Scapular & Stomach Vacuum Primer',
-      '5-Min Shoulder Mobility & Deep Core',
+      '5-Min Thoracic Mobility & Pull Primer',
+      '5-Min Scapular Activation & TVA Brace',
+      '5-Min Upper Mobility & Breath Prep',
     ],
     warmupPools: [
       [
         { name: 'TVA Rib-Tuck & Stomach Vacuum Hold', prescription: '3 x 20s full-exhale holds' },
         { name: 'Open-Book Thoracic Rotations', prescription: '8 per side' },
-        { name: 'Scapular Lat Pull-Downs', prescription: '2 x 12 slow holds' },
         { name: 'Band Pull-Aparts', prescription: '2 x 15 reps' },
       ],
       [
         { name: 'Supine TVA Engagement & Stomach Vacuum', prescription: '3 x 20s holds' },
         { name: 'Wall Angel Shoulder Slides', prescription: '2 x 12 reps' },
-        { name: 'Band External Rotations', prescription: '12 per arm' },
-        { name: 'Dead Bug Core Bracing', prescription: '12 controlled reps' },
+        { name: 'Scapular Lat Hang Pulses', prescription: '2 x 12 reps' },
       ],
       [
         { name: 'Seated Stomach Vacuum & Breath Brace', prescription: '3 x 20s holds' },
-        { name: 'Foam Roller Thoracic Extension', prescription: '10 slow glides' },
+        { name: 'Band External Rotations', prescription: '12 per arm' },
         { name: 'Straight-Arm Band Pulldowns', prescription: '2 x 15 light reps' },
-        { name: 'Arm Circles + Cuff Warm-Up', prescription: '30 seconds' },
       ],
     ],
     exerciseSlots: [
+      // 1. Warm Up
       [
-        ex('Wide-Grip Lat Pulldown', 'Latissimus Dorsi', 'Drive elbows toward hips to frame waist taper. Increase weight by 2.5kg when hitting max reps.', '3-1-1-0', 90, 4, 12, 35),
-        ex('Assisted Wide-Grip Pull-Up', 'Upper Lat Width', 'Pull collarbone toward bar without shrugging. Reduce assistance by 2.5kg at top reps.', '3-1-1-0', 90, 4, 10, 25),
-        ex('Single-Arm Kneeling Lat Pulldown', 'Outer Lat Sweep', 'Keep torso stacked tall and drive elbow to hip. Add 2.5kg when all sets reach 12 reps.', '2-1-2-0', 60, 3, 12, 17.5),
+        ex('Warm Up', 'Mobility & Activation', 'Perform thoracic rotations, band pull-aparts, scapular pull-downs, and 2 x 20s TVA vacuum holds.', 'Controlled', 30, 1, 5, 0),
+        ex('Warm Up', 'Mobility & Activation', 'Complete wall shoulder slides, light band dislocates, and rotator cuff external rotations.', 'Controlled', 30, 1, 5, 0),
+        ex('Warm Up', 'Mobility & Activation', 'Warm up shoulder blades with cat-cow glides, dead hangs, and banded rows before heavy pulls.', 'Controlled', 30, 1, 5, 0),
       ],
+      // 2. Pull #1
       [
-        ex('Chest-Supported Cable Row', 'Mid-Back & Posture', 'Pinch shoulder blades cleanly for 1s peak hold. Increase load by 2.5kg at 14 clean reps.', '2-1-1-1', 60, 4, 14, 27.5),
-        ex('Seated Neutral-Grip Cable Row', 'Mid-Back Tone', 'Keep ribcage tall; pull handles to lower ribs. Add 2.5kg once hitting max reps.', '2-1-1-1', 60, 4, 12, 27.5),
-        ex('Single-Arm Dumbbell Row', 'Lats & Mid-Back', 'Sweep elbow back toward hip pocket. Increase dumbbell by 2.5kg when hitting 12 reps.', '2-1-1-0', 60, 3, 12, 12.5),
+        ex('Wide-Grip Lat Pulldown', 'Pull · Lats', 'Drive elbows toward hips to build upper back taper. Increase weight by 2.5kg when hitting max reps.', '3-1-1-0', 90, 4, 12, 35),
+        ex('Assisted Wide-Grip Pull-Up', 'Pull · Upper Lats', 'Pull collarbone toward bar without shrugging. Reduce assistance by 2.5kg at top reps.', '3-1-1-0', 90, 4, 10, 25),
+        ex('Neutral-Grip Lat Pulldown', 'Pull · Outer Lats', 'Keep chest tall and pull elbows cleanly to lower ribs. Add 2.5kg at 12 clean reps.', '3-1-1-0', 90, 4, 12, 35),
       ],
+      // 3. Pull #2
       [
-        ex('Seated Dumbbell Shoulder Press', 'Deltoids', 'Keep elbows 30° forward; zero lumbar arch. Increase weight by 2.5kg when hitting max reps.', '2-1-1-0', 90, 3, 12, 10),
-        ex('Arnold Dumbbell Press', '3D Shoulders', 'Smooth rotation overhead keeping traps relaxed. Add 2.5kg once all sets hit 12 reps.', '2-1-1-0', 90, 3, 12, 8),
-        ex('Machine Shoulder Press', 'Deltoid Tone', 'Controlled 3s lowering phase. Increase stack by 2.5kg when reaching 12 clean reps.', '3-1-1-0', 75, 3, 12, 20),
+        ex('Chest-Supported Cable Row', 'Pull · Mid-Back', 'Pinch shoulder blades cleanly for 1s peak hold. Increase load by 2.5kg at 14 clean reps.', '2-1-1-1', 60, 4, 14, 27.5),
+        ex('Seated Neutral-Grip Cable Row', 'Pull · Mid-Back', 'Keep ribcage tall; pull handles smoothly to waist. Add 2.5kg once hitting max reps.', '2-1-1-1', 60, 4, 12, 27.5),
+        ex('Single-Arm Dumbbell Row', 'Pull · Lats & Rhomboids', 'Sweep elbow back toward hip pocket. Increase dumbbell by 2.5kg when hitting 12 reps.', '2-1-1-0', 60, 3, 12, 12.5),
       ],
+      // 4. Pull #3
       [
-        ex('Behind-the-Back Cable Lateral Raise', 'Side Deltoids', 'Sweep outward in scapular plane to tone shoulders. Add 2.5kg when reaching 15 clean reps.', '2-1-2-0', 60, 4, 15, 5),
-        ex('Seated Dumbbell Lateral Raise', 'Side Delts', 'Pause 1s at shoulder height without shrugging. Increase weight once 15 reps are effortless.', '2-1-1-1', 60, 4, 15, 6),
-        ex('Machine Lateral Raise', 'Medial Delts', 'Control 3s descent every rep. Increase stack by 2.5kg when hitting max reps.', '3-1-1-0', 60, 4, 15, 17.5),
+        ex('Straight-Arm Cable Pulldown', 'Pull · Lats & Posture', 'Sweep bar smoothly to thighs with ribs tucked down. Increase weight by 2.5kg at 14 reps.', '2-1-1-1', 60, 3, 14, 20),
+        ex('Single-Arm Kneeling Lat Pulldown', 'Pull · Lower Lats', 'Keep torso stacked tall and drive elbow to hip. Add 2.5kg when all sets reach 12 reps.', '2-1-2-0', 60, 3, 12, 17.5),
+        ex('Lat Pullover Machine / Dumbbell Pullover', 'Pull · Lats', 'Long arc overhead keeping core braced flat. Increase load by 2.5kg at 12 clean reps.', '3-1-1-0', 60, 3, 12, 14),
       ],
+      // 5. Pull #4
       [
-        ex('Rope Face Pull (Thumbs Back)', 'Rear Delts & Posture', 'Pull rope beside ears with external rotation. Add 2.5kg when hitting 15 controlled reps.', '2-1-1-1', 60, 3, 15, 15),
-        ex('Reverse Pec-Deck Rear Delt Fly', 'Posterior Delts', 'Sweep wide keeping shoulders depressed. Increase weight by 2.5kg at top target reps.', '2-1-1-1', 60, 3, 15, 22.5),
-        ex('Straight-Arm Cable Pulldown', 'Lats & Upper Posture', 'Sweep bar smoothly to thighs with ribs tucked. Add 2.5kg once 14 reps are solid.', '2-1-1-1', 60, 3, 14, 20),
+        ex('Rope Face Pull (Thumbs Back)', 'Pull · Rear Delts', 'Pull rope beside ears with external rotation. Add 2.5kg when hitting 15 controlled reps.', '2-1-1-1', 60, 3, 15, 15),
+        ex('Reverse Pec-Deck Rear Delt Fly', 'Pull · Posterior Delts', 'Sweep wide keeping shoulders depressed. Increase weight by 2.5kg at top target reps.', '2-1-1-1', 60, 3, 15, 22.5),
+        ex('Incline Dumbbell Rear Delt Fly', 'Pull · Rear Delts', 'Chest supported on 30° bench; sweep elbows wide. Add 1kg–2.5kg at 15 clean reps.', '2-1-1-1', 60, 3, 15, 5),
       ],
+      // 6. Pull #5
       [
-        ex('Rope Tricep Pushdown + Incline Curl', 'Toned Arms', 'Pin elbows beside ribs; full contraction. Increase weight by 2.5kg at max reps.', '2-1-1-1', 45, 3, 14, 15),
-        ex('Overhead Cable Tricep Extension', 'Tricep Long Head', 'Deep overhead stretch without flaring ribs. Add 2.5kg when hitting 14 clean reps.', '2-1-1-0', 45, 3, 14, 15),
-        ex('Dead Bug + Stomach Vacuum Hold', 'TVA Waistline', 'Draw navel inward without oblique bulk; increase vacuum duration by 5s weekly.', '3-1-2-0', 45, 3, 12, 0),
+        ex('Dumbbell Hammer Curl', 'Pull · Biceps & Forearms', 'Keep upper arms pinned motionless at sides. Increase weight by 2.5kg when hitting max reps.', '2-1-1-0', 45, 3, 12, 8),
+        ex('Incline Dumbbell Bicep Curl', 'Pull · Biceps', 'Full stretch behind torso without swinging shoulders. Increase dumbbell weight at 12 clean reps.', '3-1-1-0', 45, 3, 12, 7),
+        ex('Cable Straight-Bar Curl', 'Pull · Biceps', 'Smooth 3s lowering phase with elbows fixed. Add 2.5kg when all sets reach 14 reps.', '3-1-1-0', 45, 3, 14, 15),
+      ],
+      // 7. Core #1
+      [
+        ex('Forearm Plank & TVA Stomach Vacuum', 'Core & TVA', 'Draw navel tightly toward spine with glutes squeezed. Add 10s to hold duration weekly.', '45s Hold', 45, 3, 1, 0),
+        ex('Hollow-Body Hold', 'Core & TVA', 'Press lumbar spine flat into mat keeping shoulders lifted. Increase hold time by 5s weekly.', '30s Hold', 45, 3, 1, 0),
+        ex('Dead Bug Anti-Extension', 'Core & TVA', 'Move opposite limbs smoothly on full exhale. Add 2 reps per side each week.', '3-1-1-0', 45, 3, 12, 0),
+      ],
+      // 8. Treadmill
+      [
+        ex('Treadmill', 'LISS Incline Cardio', 'Walk steadily at 10–12% incline and 4.5 km/h for 25 mins without holding rails; add 1% incline weekly.', 'LISS Steady', 60, 1, 25, 0),
+        ex('Treadmill', 'LISS Incline Cardio', 'Maintain rhythmic Zone-2 incline walk for 25–30 mins to extend calorie deficit burn smoothly.', 'LISS Steady', 60, 1, 30, 0),
+        ex('Treadmill', 'LISS Incline Cardio', 'Brisk 12% incline walk keeping posture upright and heart rate aerobic for 25 mins.', 'LISS Steady', 60, 1, 25, 0),
       ],
     ],
   },
+
+  // Day 3: 1 Warm Up, 5 Pull, 1 Core, 1 Treadmill
   {
     dayIndex: 2,
     dayLabel: 'Wed',
     titleVariants: [
-      'Active Recovery: TVA Vacuum & Step Flow',
-      'Active Recovery: Posture Walk & Deep Core',
-      'Active Recovery: Hip Mobility & Lymphatic Reset',
+      'Day 3: Pull Sculpt, Core & LISS Treadmill',
+      'Day 3: Upper Back Detail, Arms & Treadmill',
+      'Day 3: Posture Pull Density & Deficit Walk',
     ],
-    targetMuscle: 'Active Recovery & TVA',
-    durationMin: 30,
-    isRestDay: true,
-    warmupTitleVariants: [
-      '5-Min TVA Vacuum & Spinal Release',
-      '5-Min Hip & Thoracic Unwind',
-      '5-Min Breath & Posture Reset',
-    ],
-    warmupPools: [
-      [
-        { name: 'Supine TVA Stomach Vacuum Series', prescription: '4 x 20s full-exhale holds' },
-        { name: 'Cat-Cow Spinal Wave', prescription: '10 slow breaths' },
-        { name: 'Couch Hip Flexor Stretch', prescription: '45s per side' },
-      ],
-      [
-        { name: 'Quadruped TVA Engagement Holds', prescription: '4 x 20s holds' },
-        { name: 'Pigeon Glute Release', prescription: '60s per side' },
-        { name: 'Thoracic Foam Roll', prescription: '90s gentle glide' },
-      ],
-      [
-        { name: 'Seated TVA Rib-Tuck Vacuums', prescription: '4 x 20s holds' },
-        { name: 'Child Pose Lat Reach', prescription: '45s each side' },
-        { name: 'Box Breathing Reset', prescription: '4 cycles' },
-      ],
-    ],
-    exerciseSlots: [
-      [
-        ex('Incline Treadmill Recovery Walk', 'Aerobic Recovery', '5–6% incline, upright posture; increase pace slightly week over week without CNS fatigue.', 'Steady', 60, 1, 25, 0),
-        ex('Outdoor Daylight Step Walk', 'NEAT Conditioning', 'Keep strides smooth to clear lower-body soreness and lock in daily step goal.', 'Steady', 60, 1, 30, 0),
-        ex('Zone-2 Stair Climber (Easy)', 'Glute Blood Flow', 'Light steady step cadence keeping heart rate conversational.', 'Steady', 60, 1, 20, 0),
-      ],
-      [
-        ex('Supine TVA Stomach Vacuum + Dead Bug', 'Transverse Abdominis', 'Exhale fully, draw navel inward toward spine; increase hold by 5s weekly.', '20s Hold', 45, 4, 1, 0),
-        ex('Bird-Dog Anti-Rotation Hold', 'Deep Core Stability', 'Extend opposite arm and leg keeping pelvis dead square.', '3s Hold', 45, 3, 10, 0),
-        ex('Hollow-Body Breath Hold', 'Deep Core Control', 'Tuck ribs downward with calm nasal breathing.', '25s Hold', 45, 3, 1, 0),
-      ],
-    ],
-  },
-  {
-    dayIndex: 3,
-    dayLabel: 'Thu',
-    titleVariants: [
-      'Lower B: RDLs, Split Squats & Posterior Chain',
-      'Lower B: Unilateral Glutes & Hamstring Density',
-      'Lower B: Glute Medius & Hinge Strength',
-    ],
-    targetMuscle: 'Lower Body · Glutes & Hamstrings',
-    durationMin: 55,
+    targetMuscle: 'Back, Rear Delts, Biceps & Core',
+    durationMin: 60,
     isRestDay: false,
     warmupTitleVariants: [
-      '5-Min TVA Vacuum & Unilateral Hip Prep',
-      '5-Min Glute Stabilizer & Stomach Vacuum',
-      '5-Min Hinge & Knee Mobility Primer',
-    ],
-    warmupPools: [
-      [
-        { name: 'Supine TVA Engagement & Stomach Vacuum', prescription: '3 x 20s full-exhale holds' },
-        { name: 'Banded Seated Hip Abductions', prescription: '2 x 25 pulses' },
-        { name: 'Single-Leg Romanian Hinge Reach', prescription: '8 per side' },
-        { name: 'Knee-to-Wall Ankle Rocks', prescription: '10 per side' },
-      ],
-      [
-        { name: 'Dead Bug TVA Brace + Stomach Vacuum', prescription: '12 reps + 2 x 20s vacuum' },
-        { name: 'Side-Lying Leg Raises', prescription: '2 x 15 per side' },
-        { name: 'Split Squat Isometric Hold', prescription: '20s each leg' },
-        { name: 'Cossack Squat Shifts', prescription: '10 slow transitions' },
-      ],
-      [
-        { name: 'Quadruped TVA Vacuum Holds', prescription: '3 x 20s holds' },
-        { name: 'Banded Standing Kickbacks', prescription: '2 x 15 per leg' },
-        { name: 'Goblet Squat Bottom Pry', prescription: '30s stretch' },
-        { name: 'Glute Bridge Single-Leg Hold', prescription: '20s per side' },
-      ],
-    ],
-    exerciseSlots: [
-      [
-        ex('Bulgarian Split Squats', 'Glutes & Quads', 'Long stance, slight forward lean, drive through heel. Increase weight by 2.5kg when hitting max reps.', '3-1-1-0', 90, 4, 10, 12.5),
-        ex('Deficit Dumbbell Step-Up', 'Upper Glute Max', 'Zero push-off from trailing foot. Add 2.5kg once all sets reach 10 controlled reps.', '2-1-1-0', 90, 3, 10, 10),
-        ex('Glute-Biased Walking Lunge', 'Glutes & Legs', 'Long stride pushing through front heel. Increase dumbbell load by 2.5kg at top reps.', '2-0-1-0', 90, 3, 12, 10),
-      ],
-      [
-        ex('Romanian Deadlifts (RDLs)', 'Hamstrings & Glutes', 'Hinge until hips stop traveling back; 3s descent. Increase weight by 2.5kg at max reps.', '3-1-1-0', 90, 4, 10, 50),
-        ex('B-Stance Dumbbell RDL', 'Hamstring Tie-In & Glutes', 'Load front hamstring cleanly. Increase weight by 2.5kg once 12 clean reps are hit.', '3-1-1-0', 90, 3, 12, 14),
-        ex('Cable Glute Pull-Through', 'Glutes & Hamstrings', 'Long arms, snap hips tall into glute squeeze. Add 2.5kg when hitting 15 reps.', '2-1-1-1', 60, 4, 15, 25),
-      ],
-      [
-        ex('45° High-Foot Leg Press', 'Glutes & Hamstrings', 'Feet high and shoulder-width; keep heels pinned. Add 5kg when all sets hit 12 reps.', '3-1-1-0', 90, 4, 12, 85),
-        ex('Sumo Smith Machine Squat', 'Inner Thighs & Glutes', 'Wide stance, knees track over toes. Increase weight by 2.5kg when hitting max reps.', '3-1-1-0', 90, 4, 12, 50),
-        ex('Dumbbell Sumo Squat on Blocks', 'Glutes & Adductors', 'Deep stretch between blocks with upright torso. Add 2.5kg at top target reps.', '3-1-1-0', 90, 4, 12, 22),
-      ],
-      [
-        ex('45° Glute-Biased Back Extension', 'Upper Glutes & Hamstrings', 'Round upper back subtly, flare toes 30°. Increase plate by 2.5kg when hitting 15 reps.', '2-1-1-1', 60, 3, 15, 10),
-        ex('Lying Hamstring Curl', 'Hamstrings', 'Glue hips down; 3s controlled lowering. Increase pin by 2.5kg at top reps.', '3-1-1-0', 60, 3, 12, 25),
-        ex('Seated Leg Curl', 'Hamstrings', 'Full stretch at top, 1s squeeze at bottom. Add 2.5kg once all sets hit 12 reps.', '3-1-1-1', 60, 3, 12, 30),
-      ],
-      [
-        ex('Seated Hip Abduction Machine', 'Glute Medius Shelf', 'Control 2s return without slamming stack. Increase weight by 2.5kg at 18 clean reps.', '2-1-2-0', 60, 4, 18, 45),
-        ex('Cable Glute Kickback', 'Upper Glute Shelf', 'Keep standing leg soft and pelvis square. Add 2.5kg when hitting max reps.', '2-1-1-1', 60, 3, 15, 12.5),
-        ex('Hip Adductor Machine', 'Inner Thigh Sculpt', 'Full controlled stretch open and strong squeeze. Increase load by 2.5kg at 15 reps.', '2-1-1-1', 60, 3, 15, 35),
-      ],
-      [
-        ex('Standing Single-Leg Calf Raise', 'Calves & Balance', 'Full 2s bottom stretch every rep. Increase weight by 2.5kg when hitting 15 reps.', '2-2-1-1', 45, 3, 15, 10),
-        ex('Pilates Leg Lowering + TVA Vacuum', 'Deep Lower Abs', 'Glue lower spine to mat on every descent; maintain TVA vacuum tension.', '3-1-1-0', 45, 3, 14, 0),
-        ex('Hollow-Body Breath Hold', 'Transverse Abdominis', 'Draw ribs down cleanly; progress hold time by 5s each week.', '30s Hold', 45, 3, 1, 0),
-      ],
-    ],
-  },
-  {
-    dayIndex: 4,
-    dayLabel: 'Fri',
-    titleVariants: [
-      'Upper B: Sculpted Back, Rear Delts & Arms',
-      'Upper B: Shoulder Toning & Upper Back Density',
-      'Upper B: Posture Taper & Capped Delts',
-    ],
-    targetMuscle: 'Upper Body · Back, Shoulders & Arms',
-    durationMin: 48,
-    isRestDay: false,
-    warmupTitleVariants: [
-      '5-Min TVA Vacuum & Shoulder Primer',
-      '5-Min Scapular Flow & Stomach Vacuum',
-      '5-Min Upper Posture & Cuff Activation',
+      '5-Min Shoulder Mobility & TVA Vacuum',
+      '5-Min Scapular Flow & Core Primer',
+      '5-Min Upper Back & Posture Warm-Up',
     ],
     warmupPools: [
       [
         { name: 'TVA Rib-Tuck & Stomach Vacuum Hold', prescription: '3 x 20s full-exhale holds' },
-        { name: 'Band Pull-Aparts', prescription: '2 x 15 reps' },
         { name: 'Thread-the-Needle Rotations', prescription: '8 per side' },
-        { name: 'Light Y-T Shoulder Raises', prescription: '2 x 10 reps' },
+        { name: 'Light Band Pull-Aparts', prescription: '2 x 15 reps' },
       ],
       [
-        { name: 'Quadruped TVA Engagement & Vacuum', prescription: '3 x 20s holds' },
-        { name: 'Band External Rotations', prescription: '15 per arm' },
-        { name: 'Thoracic Wall Extensions', prescription: '10 reps' },
-        { name: 'Inverted Body Rows (Easy)', prescription: '12 primer reps' },
+        { name: 'Quadruped TVA Draw-In & Vacuum', prescription: '3 x 20s holds' },
+        { name: 'Inverted Body Rows (Light)', prescription: '2 x 10 primer reps' },
+        { name: 'Arm Circles & Band Dislocates', prescription: '30 seconds' },
       ],
       [
-        { name: 'Supine Stomach Vacuum Holds', prescription: '3 x 20s holds' },
-        { name: 'Light Band Dislocates', prescription: '12 slow passes' },
-        { name: 'Face Pulls (Light Band)', prescription: '15 reps' },
-        { name: 'Wall Angel Slides', prescription: '12 reps' },
+        { name: 'Supine Stomach Vacuum Series', prescription: '3 x 20s holds' },
+        { name: 'Thoracic Foam Roll Extension', prescription: '10 slow glides' },
+        { name: 'Band External Rotations', prescription: '12 per side' },
       ],
     ],
     exerciseSlots: [
+      // 1. Warm Up
       [
-        ex('Assisted Pull-Up / Neutral Pulldown', 'Lat Width & Posture', 'Full overhead stretch, pull chest cleanly to bar. Progress by 2.5kg when hitting max reps.', '3-1-1-0', 90, 4, 10, 32.5),
-        ex('Underhand Chin-Up / Reverse Pulldown', 'Lats & Biceps', 'Drive elbows smoothly downward toward ribs. Increase weight by 2.5kg at top reps.', '3-1-1-0', 90, 4, 10, 32.5),
-        ex('TRX / Inverted Body Row', 'Upper Back & Core', 'Keep torso rigid; elevate feet or add vest when 14 reps feel easy.', '2-1-1-1', 60, 4, 12, 0),
+        ex('Warm Up', 'Mobility & Activation', 'Flow through thread-the-needle thoracic twists, band pull-aparts, arm circles, and TVA breath holds.', 'Controlled', 30, 1, 5, 0),
+        ex('Warm Up', 'Mobility & Activation', 'Complete thoracic foam rolling, scapular wall slides, and light band external rotations.', 'Controlled', 30, 1, 5, 0),
+        ex('Warm Up', 'Mobility & Activation', 'Perform light inverted row primers, dead hangs, and 2 x 20s stomach vacuum holds.', 'Controlled', 30, 1, 5, 0),
       ],
+      // 2. Pull #1
       [
-        ex('Chest-Supported Dumbbell Row', 'Upper Back & Traps', 'Pull elbows toward hips and hold 1s squeeze. Add 2.5kg when all sets hit 12 reps.', '2-1-1-1', 60, 4, 12, 12.5),
-        ex('Seated Wide-Handle Cable Row', 'Mid-Back & Rear Delts', 'Draw elbows wide to align shoulder posture. Increase stack by 2.5kg at max reps.', '2-1-1-1', 60, 3, 14, 25),
-        ex('Straight-Arm Cable Pulldown', 'Outer Lats & Serratus', 'Keep arms long and sweep to thighs. Add 2.5kg once 15 clean reps are met.', '2-1-1-1', 60, 3, 15, 20),
+        ex('Assisted Pull-Up / Neutral Pulldown', 'Pull · Lats', 'Full overhead stretch, pull chest cleanly to bar. Progress by 2.5kg when hitting max reps.', '3-1-1-0', 90, 4, 10, 32.5),
+        ex('Underhand Chin-Up / Reverse Pulldown', 'Pull · Lats & Biceps', 'Drive elbows smoothly downward toward ribs. Increase weight by 2.5kg at top reps.', '3-1-1-0', 90, 4, 10, 32.5),
+        ex('Close-Grip V-Bar Lat Pulldown', 'Pull · Mid/Lower Lats', 'Pull V-bar toward upper chest keeping shoulders down. Add 2.5kg at 12 clean reps.', '3-1-1-0', 90, 4, 12, 35),
       ],
+      // 3. Pull #2
       [
-        ex('Cable Lateral Raise', 'Side Deltoids', 'Sweep outward smoothly without shrugging traps. Increase weight when hitting 15 clean reps.', '2-1-1-0', 60, 4, 15, 5),
-        ex('Dumbbell Lateral Raise (1.5 Reps)', 'Side Delts', 'Raise to shoulder height, dip halfway, raise again. Progress load when 12 reps feel crisp.', '2-1-1-0', 60, 4, 12, 5),
-        ex('Dumbbell Upright Row (Wide)', 'Side & Rear Delts', 'Lead with elbows to sternum height. Add 2.5kg once hitting 14 controlled reps.', '2-1-1-0', 60, 3, 14, 8),
+        ex('Chest-Supported Dumbbell Row', 'Pull · Upper Back', 'Pull elbows toward hips and hold 1s squeeze. Add 2.5kg when all sets hit 12 reps.', '2-1-1-1', 60, 4, 12, 12.5),
+        ex('Seated Wide-Handle Cable Row', 'Pull · Mid-Back & Traps', 'Draw elbows wide to align upper posture. Increase stack by 2.5kg at max reps.', '2-1-1-1', 60, 3, 14, 25),
+        ex('TRX / Inverted Body Row', 'Pull · Back & Core', 'Keep torso rigid and pull chest to handles. Lower body angle or add weight at 14 reps.', '2-1-1-1', 60, 4, 12, 0),
       ],
+      // 4. Pull #3
       [
-        ex('Incline Dumbbell Y-Raise', 'Rear Delts & Lower Traps', 'Chest on 30° bench, lift thumbs into Y posture. Progress load slowly once 14 reps are smooth.', '2-1-1-1', 60, 3, 14, 4),
-        ex('Cable Rear Delt Cross-Pull', 'Posterior Delts', 'Pull diagonally downward across body. Increase weight by 2.5kg when hitting 15 reps.', '2-1-1-1', 60, 3, 15, 5),
-        ex('Cable Face Pulls', 'Rear Delts & Rotator Cuff', 'Spread rope beside ears for balanced shoulder line. Add 2.5kg at top target reps.', '2-1-1-1', 60, 3, 15, 15),
+        ex('Cable Single-Arm Straight-Arm Pulldown', 'Pull · Lats & Serratus', 'Keep arm straight and sweep hand past hip. Increase pin by 2.5kg at 14 reps.', '2-1-1-1', 60, 3, 14, 10),
+        ex('Kneeling High-Cable Row', 'Pull · Upper Lats', 'Pull diagonally down toward collarbone. Add 2.5kg once all sets hit 12 clean reps.', '2-1-1-1', 60, 3, 12, 22.5),
+        ex('Dumbbell Seal Row', 'Pull · Strict Mid-Back', 'Chest flat on bench eliminating momentum. Progress dumbbells by 2.5kg at 12 reps.', '2-1-1-1', 60, 3, 12, 12.5),
       ],
+      // 5. Pull #4
       [
-        ex('Kneeling Single-Arm Landmine Press', 'Shoulders & Core', 'Ribs stacked over hips; press smoothly overhead. Add 2.5kg when hitting 12 clean reps.', '2-1-1-0', 60, 3, 12, 15),
-        ex('Seated Dumbbell Shoulder Press', 'Deltoids', 'Smooth overhead lockout without arching lower back. Increase weight by 2.5kg at max reps.', '2-1-1-0', 75, 3, 12, 9),
-        ex('Incline Push-Up (Posture Control)', 'Chest & Serratus Support', 'Light posture work only; 3s eccentric keeping core tight. Lower incline as reps hit 15.', '3-1-1-0', 60, 3, 12, 0),
+        ex('Cable Rear Delt Cross-Pull', 'Pull · Rear Delts', 'Pull diagonally downward across body with soft elbows. Increase weight by 2.5kg at 15 reps.', '2-1-1-1', 60, 3, 15, 5),
+        ex('Incline Dumbbell Y-Raise', 'Pull · Rear Delts & Lower Traps', 'Chest on 30° bench, lift thumbs into Y posture. Progress load slowly once 14 reps are smooth.', '2-1-1-1', 60, 3, 14, 4),
+        ex('Cable Rope Face Pull', 'Pull · Rear Delts & Cuff', 'Spread rope beside ears for balanced posture. Increase stack by 2.5kg at 15 reps.', '2-1-1-1', 60, 3, 15, 15),
       ],
+      // 6. Pull #5
       [
-        ex('Dumbbell Hammer Curl + Rope Pushdown', 'Toned Arms Superset', 'Keep upper arms pinned motionless. Increase weight by 2.5kg when hitting max reps.', '2-1-1-1', 45, 3, 14, 8),
-        ex('Incline Dumbbell Curl', 'Biceps', 'Full stretch behind torso without swinging. Progress dumbbell weight once hitting 14 reps.', '2-1-1-0', 45, 3, 14, 7),
-        ex('Pallof Anti-Rotation Press + Vacuum', 'TVA Core Tightness', 'Press straight out resisting rotation; zero oblique hypertrophy. Add 2.5kg at 12 reps.', '2-2-2-0', 45, 3, 12, 10),
+        ex('EZ-Bar / Dumbbell Preacher Curl', 'Pull · Biceps', 'Control 3s lowering phase without lifting elbows. Increase weight by 2.5kg at 12 clean reps.', '3-1-1-0', 45, 3, 12, 15),
+        ex('Cross-Body Dumbbell Hammer Curl', 'Pull · Biceps & Brachialis', 'Curl smoothly across midline; zero torso swing. Add 2.5kg once hitting 12 reps per arm.', '2-1-1-0', 45, 3, 12, 8),
+        ex('Cable Rope Hammer Curl', 'Pull · Biceps', 'Pull wrists slightly apart at top squeeze. Increase weight by 2.5kg at 14 clean reps.', '2-1-1-1', 45, 3, 14, 15),
+      ],
+      // 7. Core #1
+      [
+        ex('Bird-Dog Anti-Rotation & TVA Vacuum', 'Core & TVA', 'Extend opposite arm and leg smoothly keeping hips square. Hold top reach for 2s each rep.', '2-2-1-0', 45, 3, 12, 0),
+        ex('Hanging Knee Raise (Controlled)', 'Core & Lower Abs', 'Curl pelvis upward without swinging torso. Progress reps or straight-leg angle weekly.', '2-1-2-0', 45, 3, 12, 0),
+        ex('Reverse Crunch + Stomach Vacuum', 'Core & TVA', 'Lift tailbone cleanly off bench on exhale. Add 2 slow reps each week.', '3-1-1-0', 45, 3, 14, 0),
+      ],
+      // 8. Treadmill
+      [
+        ex('Treadmill', 'LISS Incline Cardio', 'Walk steadily at 10–12% incline and 4.5 km/h for 25 mins without holding rails; add 1% incline weekly.', 'LISS Steady', 60, 1, 25, 0),
+        ex('Treadmill', 'LISS Incline Cardio', 'Zone-2 incline walk for 25–30 mins keeping nasal breathing steady for fat oxidation.', 'LISS Steady', 60, 1, 30, 0),
+        ex('Treadmill', 'LISS Incline Cardio', 'Consistent 10% incline walk at brisk pace for 25 mins to hit daily step & deficit goals.', 'LISS Steady', 60, 1, 25, 0),
       ],
     ],
   },
+
+  // Day 4: 1 Warm Up, 5 Quads, 1 Core, 1 Treadmill
+  {
+    dayIndex: 3,
+    dayLabel: 'Thu',
+    titleVariants: [
+      'Day 4: Quads Shape, Core & LISS Treadmill',
+      'Day 4: Quad Hypertrophy & Deficit Walk',
+      'Day 4: Knee-Flexion Power, Core & Treadmill',
+    ],
+    targetMuscle: 'Quads & Core',
+    durationMin: 65,
+    isRestDay: false,
+    warmupTitleVariants: [
+      '5-Min Knee, Ankle & Quad Activation',
+      '5-Min Deep Squat Pry & TVA Primer',
+      '5-Min Lower Joint Mobility & Core',
+    ],
+    warmupPools: [
+      [
+        { name: 'Supine TVA Engagement & Stomach Vacuum', prescription: '3 x 20s full-exhale holds' },
+        { name: 'Knee-to-Wall Ankle Dorsiflexion Rocks', prescription: '10 per side' },
+        { name: 'Goblet Squat Bottom Pry', prescription: '30s stretch hold' },
+      ],
+      [
+        { name: 'Dead Bug TVA Brace + Stomach Vacuum', prescription: '12 reps + 2 x 20s vacuum' },
+        { name: 'Cossack Squat Transitions', prescription: '10 slow shifts' },
+        { name: 'Spanish Squat / Sissy Hold', prescription: '2 x 20s light quad burn' },
+      ],
+      [
+        { name: 'Quadruped Stomach Vacuum Holds', prescription: '3 x 20s holds' },
+        { name: 'Bodyweight Split Squats', prescription: '10 per leg' },
+        { name: 'World Greatest Stretch', prescription: '6 per side' },
+      ],
+    ],
+    exerciseSlots: [
+      // 1. Warm Up
+      [
+        ex('Warm Up', 'Mobility & Activation', 'Complete ankle dorsiflexion rocks, deep goblet squat prys, bodyweight split squats, and TVA breath holds.', 'Controlled', 30, 1, 5, 0),
+        ex('Warm Up', 'Mobility & Activation', 'Perform dynamic leg swings, cossack squat shifts, hip circles, and stomach vacuum activation.', 'Controlled', 30, 1, 5, 0),
+        ex('Warm Up', 'Mobility & Activation', 'Warm up knees and hips with light tempo air squats, calf raises, and deep core bracing.', 'Controlled', 30, 1, 5, 0),
+      ],
+      // 2. Quads #1
+      [
+        ex('Hack Squat (Quad Bias)', 'Quads', 'Feet lower on sled for deep knee flexion; 3s descent. Increase weight by 2.5kg when hitting max reps.', '3-1-1-0', 120, 4, 10, 50),
+        ex('Heels-Elevated Smith Squat', 'Quads', 'Keep torso upright and drive knees forward cleanly. Add 2.5kg once all sets reach 10 reps.', '3-1-1-0', 120, 4, 10, 45),
+        ex('Barbell Front Squat', 'Quads', 'Elbows high, brace TVA hard through full depth. Increase weight by 2.5kg at 8 clean reps.', '3-1-1-0', 120, 4, 8, 40),
+      ],
+      // 3. Quads #2
+      [
+        ex('45° Low-Foot Leg Press', 'Quads', 'Place feet lower and shoulder-width; stop before hips tuck. Add 5kg when all sets hit 12 reps.', '3-1-1-0', 90, 4, 12, 80),
+        ex('Pendulum Squat / V-Squat Machine', 'Quads', 'Sink smoothly into full knee bend without bouncing. Increase plates by 2.5kg at 12 reps.', '3-1-1-0', 90, 4, 12, 40),
+        ex('Heels-Elevated Dumbbell Goblet Squat', 'Quads', 'Keep torso vertical and elbows inside knees. Add 2.5kg once hitting 14 controlled reps.', '3-1-1-0', 90, 4, 14, 20),
+      ],
+      // 4. Quads #3
+      [
+        ex('Bulgarian Split Squat (Upright Quad Bias)', 'Quads', 'Shorter stance and upright torso to target quads cleanly. Add 2.5kg when hitting 10 reps.', '3-1-1-0', 75, 3, 10, 12.5),
+        ex('Front-Foot Elevated Split Squat', 'Quads', 'Cover front ankle cleanly with upright chest. Increase dumbbell weight by 2.5kg at 12 reps.', '3-1-1-0', 75, 3, 12, 10),
+        ex('Controlled Dumbbell Step-Up', 'Quads', 'Lower smoothly for 3 full seconds on lead quad. Add 2.5kg once hitting 12 crisp reps.', '3-1-1-0', 75, 3, 12, 10),
+      ],
+      // 5. Quads #4
+      [
+        ex('Walking Dumbbell Lunge (Short Stride)', 'Quads', 'Drop back knee straight down under hips to load front quad. Add 2.5kg at 12 steps per leg.', '2-0-1-0', 60, 3, 12, 10),
+        ex('Reverse Barbell / Dumbbell Lunge', 'Quads', 'Stay upright over lead thigh throughout descent. Increase weight by 2.5kg when hitting max reps.', '2-1-1-0', 60, 3, 12, 10),
+        ex('Heels-Elevated Landmine Squat', 'Quads', 'Push knees forward smoothly keeping spine stacked. Add 2.5kg at 14 clean reps.', '3-1-1-0', 60, 3, 14, 25),
+      ],
+      // 6. Quads #5
+      [
+        ex('Seated Leg Extension', 'Quads', 'Pause 1.5s at full lockout and control 3s return. Increase stack by 2.5kg at 15 clean reps.', '3-1-1-1', 60, 4, 15, 35),
+        ex('Single-Leg Extension', 'Quads', 'Isolate each quad evenly through complete range. Add 2.5kg once hitting 14 reps per leg.', '2-1-1-1', 45, 3, 14, 17.5),
+        ex('Sissy Squat / Banded Quad Burnout', 'Quads', 'Hold smooth stretch through lower quads; progress bodyweight tempo or band resistance weekly.', '3-1-1-0', 45, 3, 15, 0),
+      ],
+      // 7. Core #1
+      [
+        ex('Hanging Leg / Knee Raise', 'Core & TVA', 'Curl ribs to pelvis smoothly without swinging. Increase controlled reps by 2 each week.', '2-1-2-0', 45, 3, 12, 0),
+        ex('Supine TVA Stomach Vacuum & Dead Bug', 'Core & TVA', 'Keep lumbar spine pinned flat on exhale. Extend vacuum hold by 5s weekly.', '3-1-2-0', 45, 3, 12, 0),
+        ex('Cable Rope Crunch (Controlled)', 'Core & Abs', 'Flex spine forward keeping hips locked still. Add 2.5kg when hitting 15 clean reps.', '2-1-2-0', 45, 3, 15, 25),
+      ],
+      // 8. Treadmill
+      [
+        ex('Treadmill', 'LISS Incline Cardio', 'Walk steadily at 10–12% incline and 4.5 km/h for 25 mins without holding rails; add 1% incline weekly.', 'LISS Steady', 60, 1, 25, 0),
+        ex('Treadmill', 'LISS Incline Cardio', 'Smooth low-impact 8–10% incline walk for 25–30 mins to flush quad lactic acid cleanly.', 'LISS Steady', 60, 1, 30, 0),
+        ex('Treadmill', 'LISS Incline Cardio', 'Steady Zone-2 incline walk keeping stride controlled for 25 mins.', 'LISS Steady', 60, 1, 25, 0),
+      ],
+    ],
+  },
+
+  // Day 5: 1 Warm Up, 2 Push, 2 Pull, 2 Core, 1 Treadmill
+  {
+    dayIndex: 4,
+    dayLabel: 'Fri',
+    titleVariants: [
+      'Day 5: Push, Pull, Double Core & Treadmill',
+      'Day 5: Upper Toning Balance, Core & LISS',
+      'Day 5: Delts, Back, Core & Deficit Treadmill',
+    ],
+    targetMuscle: 'Push, Pull & Double Core',
+    durationMin: 60,
+    isRestDay: false,
+    warmupTitleVariants: [
+      '5-Min Shoulder Cuff, Back & TVA Prep',
+      '5-Min Upper Mobility & Stomach Vacuum',
+      '5-Min Balanced Upper & Core Primer',
+    ],
+    warmupPools: [
+      [
+        { name: 'TVA Rib-Tuck & Stomach Vacuum Hold', prescription: '3 x 20s full-exhale holds' },
+        { name: 'Band Pull-Aparts & Dislocates', prescription: '2 x 15 reps' },
+        { name: 'Wall Angel Shoulder Slides', prescription: '2 x 12 reps' },
+      ],
+      [
+        { name: 'Supine TVA Engagement & Stomach Vacuum', prescription: '3 x 20s holds' },
+        { name: 'Band External Rotations', prescription: '12 per arm' },
+        { name: 'Cat-Cow + Thoracic Twist', prescription: '8 per side' },
+      ],
+      [
+        { name: 'Quadruped TVA Draw-In Holds', prescription: '3 x 20s holds' },
+        { name: 'Light Y-T Raises', prescription: '2 x 12 reps' },
+        { name: 'Scapular Push-Ups', prescription: '2 x 12 reps' },
+      ],
+    ],
+    exerciseSlots: [
+      // 1. Warm Up
+      [
+        ex('Warm Up', 'Mobility & Activation', 'Complete band pull-aparts, arm circles, wall slides, scapular push-ups, and 2 x 20s TVA vacuums.', 'Controlled', 30, 1, 5, 0),
+        ex('Warm Up', 'Mobility & Activation', 'Warm up shoulders and spine with external rotations, light Y-T raises, and thoracic twists.', 'Controlled', 30, 1, 5, 0),
+        ex('Warm Up', 'Mobility & Activation', 'Perform band dislocates, cat-cow waves, and deep core breath bracing before upper work.', 'Controlled', 30, 1, 5, 0),
+      ],
+      // 2. Push #1
+      [
+        ex('Seated Dumbbell Shoulder Press', 'Push · Shoulders', 'Keep elbows 30° forward; zero lumbar arch. Increase weight by 2.5kg when hitting max reps.', '2-1-1-0', 90, 4, 12, 10),
+        ex('Incline Dumbbell Press (30°)', 'Push · Upper Chest & Delts', 'Controlled 3s eccentric keeping shoulders packed. Add 2.5kg once all sets hit 12 reps.', '3-1-1-0', 90, 3, 12, 10),
+        ex('Arnold Dumbbell Press', 'Push · 3D Shoulders', 'Smooth rotation overhead keeping traps relaxed. Add 2.5kg once hitting 12 clean reps.', '2-1-1-0', 90, 4, 12, 8),
+      ],
+      // 3. Push #2
+      [
+        ex('Behind-the-Back Cable Lateral Raise', 'Push · Side Delts', 'Sweep outward in scapular plane to cap shoulders cleanly. Add 2.5kg when hitting 15 reps.', '2-1-2-0', 60, 4, 15, 5),
+        ex('Seated Dumbbell Lateral Raise', 'Push · Side Delts', 'Pause 1s at shoulder height without shrugging. Increase weight once 15 reps feel smooth.', '2-1-1-1', 60, 4, 15, 6),
+        ex('Rope Overhead Tricep Extension', 'Push · Triceps', 'Deep overhead stretch without flaring ribs. Add 2.5kg when hitting 14 clean reps.', '2-1-1-0', 60, 3, 14, 15),
+      ],
+      // 4. Pull #1
+      [
+        ex('Wide-Grip Lat Pulldown', 'Pull · Lats', 'Drive elbows toward hips to accentuate waistline taper. Increase weight by 2.5kg at 12 reps.', '3-1-1-0', 75, 4, 12, 35),
+        ex('Chest-Supported Cable Row', 'Pull · Mid-Back', 'Pinch shoulder blades cleanly for 1s hold. Add 2.5kg when hitting 14 clean reps.', '2-1-1-1', 75, 4, 14, 27.5),
+        ex('Single-Arm Dumbbell Row', 'Pull · Lats & Back', 'Sweep elbow back toward hip pocket. Increase dumbbell weight by 2.5kg at 12 reps.', '2-1-1-0', 60, 4, 12, 12.5),
+      ],
+      // 5. Pull #2
+      [
+        ex('Rope Face Pull (External Rotation)', 'Pull · Rear Delts', 'Pull rope beside ears keeping traps relaxed. Add 2.5kg when hitting 15 controlled reps.', '2-1-1-1', 60, 3, 15, 15),
+        ex('Reverse Pec-Deck Rear Delt Fly', 'Pull · Posterior Delts', 'Sweep wide keeping shoulders depressed. Increase weight by 2.5kg at 15 clean reps.', '2-1-1-1', 60, 3, 15, 22.5),
+        ex('Straight-Arm Cable Pulldown', 'Pull · Lats & Posture', 'Long arms sweeping smoothly to thighs. Increase stack by 2.5kg at 14 clean reps.', '2-1-1-1', 60, 3, 14, 20),
+      ],
+      // 6. Core #1
+      [
+        ex('Cable Pallof Anti-Rotation Press', 'Core & TVA', 'Resist torso twist keeping ribs tucked; zero oblique bulk. Add 2.5kg when hitting 14 reps.', '2-2-2-0', 45, 3, 14, 10),
+        ex('Dead Bug Transverse Brace', 'Core & TVA', 'Glue lower spine to mat on slow limb lowers. Add 2 controlled reps each week.', '3-1-1-0', 45, 3, 12, 0),
+        ex('Hanging Knee / Leg Raise', 'Core & Lower Abs', 'Curl pelvis upward smoothly without swinging. Progress reps weekly.', '2-1-2-0', 45, 3, 12, 0),
+      ],
+      // 7. Core #2
+      [
+        ex('Supine TVA Stomach Vacuum Hold', 'Core & TVA', 'Full exhale drawing navel inward toward spine; extend hold time by 5s weekly.', '20s Hold', 45, 4, 1, 0),
+        ex('Forearm Plank (RKC Brace)', 'Core & TVA', 'Tuck tailbone and squeeze glutes + TVA hard. Increase hold by 10s every week.', '45s Hold', 45, 3, 1, 0),
+        ex('Hollow-Body Hold', 'Core & TVA', 'Keep lower back pressed flat into floor; progress hold duration by 5s weekly.', '30s Hold', 45, 3, 1, 0),
+      ],
+      // 8. Treadmill
+      [
+        ex('Treadmill', 'LISS Incline Cardio', 'Walk steadily at 10–12% incline and 4.5 km/h for 25 mins without holding rails; add 1% incline weekly.', 'LISS Steady', 60, 1, 25, 0),
+        ex('Treadmill', 'LISS Incline Cardio', 'Steady 10% incline walk for 25–30 mins to lock in daily step floor & fat loss.', 'LISS Steady', 60, 1, 30, 0),
+        ex('Treadmill', 'LISS Incline Cardio', 'Brisk Zone-2 incline walk for 25 mins keeping upright posture.', 'LISS Steady', 60, 1, 25, 0),
+      ],
+    ],
+  },
+
+  // Day 6: 1 Warm Up, 5 Glutes & Hamstrings, 1 Core, 1 Treadmill
   {
     dayIndex: 5,
     dayLabel: 'Sat',
     titleVariants: [
-      'Lower C: Hip Thrusts, RDLs & Glute Shelf',
-      'Lower C: High-Volume Glutes & Hamstring Sculpt',
-      'Lower C: Posterior Sweep & Unilateral Glutes',
+      'Day 6: Glutes & Hamstrings High-Volume Sculpt',
+      'Day 6: Posterior Sweep, Core & LISS Treadmill',
+      'Day 6: Glute Shelf Finisher & Deficit Walk',
     ],
-    targetMuscle: 'Lower Body · Glutes & Hamstrings',
-    durationMin: 52,
+    targetMuscle: 'Glutes, Hamstrings & Core',
+    durationMin: 65,
     isRestDay: false,
     warmupTitleVariants: [
       '5-Min TVA Vacuum & Glute Firing',
-      '5-Min Hip Capsule & Stomach Vacuum Prep',
-      '5-Min Posterior Chain Activation',
+      '5-Min Hip Capsule & Posterior Prep',
+      '5-Min Lower Mobility & Activation',
     ],
     warmupPools: [
       [
         { name: 'Supine TVA Engagement & Stomach Vacuum', prescription: '3 x 20s full-exhale holds' },
         { name: 'Banded Frog Bridges', prescription: '2 x 20 reps' },
         { name: 'Banded Good Mornings', prescription: '2 x 15 reps' },
-        { name: 'World Greatest Stretch', prescription: '6 per side' },
       ],
       [
         { name: 'Dead Bug TVA Brace + Stomach Vacuum', prescription: '12 reps + 2 x 20s vacuum' },
         { name: 'Lateral Band Walks', prescription: '2 x 15 per side' },
-        { name: 'Bodyweight Split Squats', prescription: '10 per leg' },
         { name: 'Ankle Dorsiflexion Rocks', prescription: '10 per side' },
       ],
       [
         { name: 'Quadruped Stomach Vacuum Holds', prescription: '3 x 20s holds' },
         { name: 'Banded Clamshells', prescription: '2 x 20 per side' },
-        { name: 'Single-Leg Hinge Reach', prescription: '8 per leg' },
         { name: '90/90 Hip Switches', prescription: '10 switches' },
       ],
     ],
     exerciseSlots: [
+      // 1. Warm Up
       [
-        ex('Smith Machine Hip Thrusts (1.5 Reps)', 'Glute Max', 'Full thrust, drop halfway, lock back out. Increase weight by 2.5kg when hitting max reps.', '2-1-1-1', 120, 4, 10, 65),
-        ex('Barbell Glute Bridge (Feet Close)', 'Glute Max & Tie-In', 'Hover bar above floor without resting between reps. Add 2.5kg once hitting 12 clean reps.', '2-1-1-1', 90, 4, 12, 70),
-        ex('Barbell Hip Thrusts', 'Glute Max', 'Tuck chin, drive heels hard, pause 1s at top. Increase weight by 2.5kg at top reps.', '2-1-1-1', 120, 4, 10, 75),
+        ex('Warm Up', 'Mobility & Activation', 'Perform 90/90 hip openers, banded frog pumps, banded good mornings, and TVA vacuum holds.', 'Controlled', 30, 1, 5, 0),
+        ex('Warm Up', 'Mobility & Activation', 'Complete lateral band walks, single-leg hinge reaches, ankle rocks, and core breath bracing.', 'Controlled', 30, 1, 5, 0),
+        ex('Warm Up', 'Mobility & Activation', 'Flow through world greatest stretch, banded clamshells, and deep core activation.', 'Controlled', 30, 1, 5, 0),
       ],
+      // 2. Glutes & Hamstrings #1
       [
-        ex('Dumbbell Romanian Deadlifts (RDLs)', 'Hamstrings & Glutes', 'Glide dumbbells down shins; stop when hips stop hinging. Add 2.5kg at max reps.', '3-1-1-0', 90, 4, 12, 16),
-        ex('Barbell Good Morning (Controlled)', 'Hamstrings & Glutes', 'Push hips far back with soft knees. Increase bar weight by 2.5kg at 12 clean reps.', '3-1-1-0', 90, 3, 12, 30),
-        ex('Single-Leg Landmine / DB RDL', 'Unilateral Glutes & Hamstrings', 'Square hips toward floor; drive through heel. Add 2.5kg when hitting 10 reps per leg.', '3-1-1-0', 90, 3, 10, 14),
+        ex('Smith Machine Hip Thrusts (1.5 Reps)', 'Glutes & Hamstrings', 'Full thrust, drop halfway, lock back out. Increase weight by 2.5kg when hitting max reps.', '2-1-1-1', 120, 4, 10, 65),
+        ex('Barbell Glute Bridge (Feet Close)', 'Glutes & Hamstrings', 'Hover bar above floor without resting between reps. Add 2.5kg once hitting 12 clean reps.', '2-1-1-1', 90, 4, 12, 70),
+        ex('Barbell Hip Thrusts', 'Glutes & Hamstrings', 'Tuck chin, drive heels hard, pause 1s at top. Increase weight by 2.5kg at top reps.', '2-1-1-1', 120, 4, 10, 75),
       ],
+      // 3. Glutes & Hamstrings #2
       [
-        ex('Bulgarian Split Squats (Tempo)', 'Glutes & Quads', '3s slow lowering, crisp drive through front heel. Increase weight by 2.5kg at max reps.', '3-1-1-0', 75, 3, 10, 12.5),
-        ex('Elevated Kettlebell Sumo Squat', 'Glutes & Inner Thighs', 'Deep stretch between platforms. Add 2kg–2.5kg once all sets hit 14 reps cleanly.', '3-1-1-0', 75, 4, 14, 20),
-        ex('Curtsy Lunge (Slow Eccentric)', 'Glute Medius & Quads', 'Control 3s descent keeping hips facing forward. Increase weight by 2.5kg at 12 reps.', '3-1-1-0', 60, 3, 12, 10),
+        ex('Dumbbell Romanian Deadlifts (RDLs)', 'Glutes & Hamstrings', 'Glide dumbbells down shins; stop when hips stop hinging. Add 2.5kg at max reps.', '3-1-1-0', 90, 4, 12, 16),
+        ex('Barbell Good Morning (Controlled)', 'Glutes & Hamstrings', 'Push hips far back with soft knees. Increase bar weight by 2.5kg at 12 clean reps.', '3-1-1-0', 90, 3, 12, 30),
+        ex('Single-Leg Landmine / Dumbbell RDL', 'Glutes & Hamstrings', 'Square hips toward floor; drive through heel. Add 2.5kg when hitting 10 reps per leg.', '3-1-1-0', 90, 3, 10, 14),
       ],
+      // 4. Glutes & Hamstrings #3
       [
-        ex('Seated Single-Leg Curl', 'Hamstrings', 'Full top stretch, strong 1s squeeze at bottom. Increase load by 2.5kg at 12 reps.', '2-1-1-1', 60, 3, 12, 20),
-        ex('Cable Glute Pull-Through (High Rep)', 'Glutes & Hamstrings', 'Deep hip hinge and strong glute lockout. Add 2.5kg when hitting 16 reps cleanly.', '2-1-1-1', 60, 3, 16, 22.5),
-        ex('45° Hyperextension (Glute Focus)', 'Upper Glutes', 'Round upper back subtly and drive via glutes. Progress plate by 2.5kg at 15 reps.', '2-1-1-1', 60, 3, 15, 10),
+        ex('45° High-Foot Leg Press', 'Glutes & Hamstrings', 'Feet high and wide to bias glute max & hamstrings. Add 5kg once all sets hit 12 reps.', '3-1-1-0', 90, 4, 12, 85),
+        ex('Elevated Kettlebell Sumo Squat', 'Glutes & Hamstrings', 'Deep stretch between platforms. Add 2.5kg once all sets hit 14 reps cleanly.', '3-1-1-0', 75, 4, 14, 20),
+        ex('Bulgarian Split Squats (Glute Tempo)', 'Glutes & Hamstrings', '3s slow lowering, crisp drive through front heel. Increase weight by 2.5kg at max reps.', '3-1-1-0', 75, 3, 10, 12.5),
       ],
+      // 5. Glutes & Hamstrings #4
       [
-        ex('Cable Glute Kickback (Straight Back)', 'Glute Shelf', 'Soft standing knee, square pelvis. Increase stack by 2.5kg when hitting max reps.', '2-1-1-1', 60, 3, 15, 12.5),
-        ex('Machine Seated Hip Abduction', 'Glute Medius', '15 upright + 15 forward-lean controlled reps. Add 2.5kg once 20 reps feel steady.', '1-1-1-0', 45, 3, 20, 45),
-        ex('Banded Dumbbell Frog Pump', 'Glute Pump Finisher', 'Soles pressed together, crisp 1s lockout. Increase dumbbell by 2.5kg at 25 reps.', '1-1-1-0', 45, 3, 25, 15),
+        ex('45° Hyperextension (Glute Focus)', 'Glutes & Hamstrings', 'Round upper back subtly, drive up squeezing glutes. Progress plate by 2.5kg at 15 reps.', '2-1-1-1', 60, 3, 15, 10),
+        ex('Seated Single-Leg Curl', 'Glutes & Hamstrings', 'Full top stretch, strong 1s squeeze at bottom. Increase load by 2.5kg at 12 reps.', '2-1-1-1', 60, 3, 12, 20),
+        ex('Lying Hamstring Curl', 'Glutes & Hamstrings', 'Keep hips pressed into pad cleanly. Add 2.5kg when all sets reach 12 clean reps.', '3-1-1-0', 60, 3, 12, 25),
       ],
+      // 6. Glutes & Hamstrings #5
       [
-        ex('Standing Calf & Tibialis Raise', 'Calves & Ankle Balance', 'Full bottom stretch, 1s top pause. Increase weight by 2.5kg when hitting 16 reps.', '2-1-1-1', 45, 3, 16, 20),
-        ex('Dead Bug Transverse Brace', 'TVA Waistline', 'Exhale ribs downward completely; progress slow tempo control each week.', '3-1-1-0', 45, 3, 14, 0),
-        ex('Supine TVA Stomach Vacuum Hold', 'Transverse Abdominis', 'Full exhale drawing navel to spine; extend hold by 5s when 20s feels easy.', '20s Hold', 45, 3, 1, 0),
+        ex('Cable Glute Kickback (Straight Back)', 'Glutes & Hamstrings', 'Soft standing knee, square pelvis. Increase stack by 2.5kg when hitting max reps.', '2-1-1-1', 60, 3, 15, 12.5),
+        ex('Machine Seated Hip Abduction', 'Glutes & Hamstrings', 'Lean forward slightly with 1s peak pause. Add 2.5kg once 20 reps feel steady.', '1-1-1-0', 45, 3, 20, 45),
+        ex('Banded Dumbbell Frog Pump', 'Glutes & Hamstrings', 'Soles pressed together, crisp 1s lockout. Increase dumbbell by 2.5kg at 25 reps.', '1-1-1-0', 45, 3, 25, 15),
+      ],
+      // 7. Core #1
+      [
+        ex('Supine TVA Stomach Vacuum & Reverse Crunch', 'Core & TVA', 'Full exhale drawing navel to spine; curl pelvis smoothly. Extend hold by 5s weekly.', '20s Hold', 45, 3, 12, 0),
+        ex('Dead Bug Transverse Brace', 'Core & TVA', 'Exhale ribs downward completely; progress slow tempo control each week.', '3-1-1-0', 45, 3, 14, 0),
+        ex('Pilates Scissor & TVA Hold', 'Core & TVA', 'Keep lower back pinned smoothly without hip-flexor takeover. Add 2 reps weekly.', '3-1-1-0', 45, 3, 14, 0),
+      ],
+      // 8. Treadmill
+      [
+        ex('Treadmill', 'LISS Incline Cardio', 'Walk steadily at 10–12% incline and 4.5 km/h for 25 mins without holding rails; add 1% incline weekly.', 'LISS Steady', 60, 1, 25, 0),
+        ex('Treadmill', 'LISS Incline Cardio', 'Zone-2 10% incline walk for 25–30 mins to seal calorie deficit fat loss smoothly.', 'LISS Steady', 60, 1, 30, 0),
+        ex('Treadmill', 'LISS Incline Cardio', 'Consistent incline walk keeping nasal breathing relaxed for 25 mins.', 'LISS Steady', 60, 1, 25, 0),
       ],
     ],
   },
+
+  // Day 7: Active Recovery Day
   {
     dayIndex: 6,
     dayLabel: 'Sun',
     titleVariants: [
-      'Day 7: Complete CNS Reset & Hydration',
-      'Day 7: Restorative Mobility & Sleep Bank',
-      'Day 7: Recovery Walk & Stretch Flow',
+      'Day 7: Complete CNS Reset & Recovery Walk',
+      'Day 7: Restorative Mobility & Step Floor',
+      'Day 7: Recovery Flow & LISS Walk',
     ],
     targetMuscle: 'Rest & Recovery',
-    durationMin: 25,
+    durationMin: 30,
     isRestDay: true,
     warmupTitleVariants: [
       '5-Min TVA Breath & Lymphatic Flow',
@@ -511,9 +636,14 @@ const FEMALE_HOURGLASS_SPLIT: DayBlueprint[] = [
     ],
     exerciseSlots: [
       [
-        ex('Outdoor Daylight Recovery Walk', 'Metabolic Baseline', 'Relaxed nasal breathing while hitting daily step target.', 'Easy Pace', 60, 1, 30, 0),
-        ex('Evening Zone-2 Stroll', 'Active Recovery', 'Unplug from screens and prepare for 8.5h restorative sleep.', 'Easy Pace', 60, 1, 25, 0),
-        ex('Mobility Flow & Light Walk', 'Circulation', 'Gentle 20-minute movement to flush lower-body stiffness.', 'Easy Pace', 60, 1, 20, 0),
+        ex('Warm Up', 'Mobility & Recovery', 'Gentle hip flexor stretch, pigeon glute release, and supine spinal twists with calm nasal breathing.', 'Easy', 30, 1, 5, 0),
+        ex('Warm Up', 'Mobility & Recovery', 'Light thoracic foam rolling, hamstring strap stretch, and gentle TVA breath work.', 'Easy', 30, 1, 5, 0),
+        ex('Warm Up', 'Mobility & Recovery', 'Child pose lat reaches, ankle circles, and box breathing to reset nervous system.', 'Easy', 30, 1, 5, 0),
+      ],
+      [
+        ex('Treadmill', 'LISS Recovery Walk', 'Relaxed flat or 3% incline recovery walk for 25 mins to hit daily step target without CNS fatigue.', 'Easy Pace', 60, 1, 25, 0),
+        ex('Treadmill', 'LISS Recovery Walk', 'Easy 25-minute Zone-1 recovery walk while preparing for Monday Glutes & Hamstrings.', 'Easy Pace', 60, 1, 25, 0),
+        ex('Treadmill', 'LISS Recovery Walk', 'Gentle 20-minute circulation walk to clear lower-body soreness.', 'Easy Pace', 60, 1, 20, 0),
       ],
     ],
   },
@@ -2788,6 +2918,9 @@ function adaptExerciseForInstruction(
   scale: number
 ): ExercisePlan {
   const nameLower = item.name.toLowerCase();
+  if (nameLower === 'warm up' || nameLower === 'treadmill') {
+    return item;
+  }
 
   const replaceWith = (
     name: string,
@@ -2977,7 +3110,13 @@ export function buildVariedSplit(
           cleanInstruction.includes('end') ||
           cleanInstruction.includes('finish') ||
           cleanInstruction.includes('include'));
-      if (wantsWalking && !exercises.some((e) => e.name.toLowerCase().includes('walk'))) {
+      if (
+        wantsWalking &&
+        !exercises.some((e) => {
+          const lower = e.name.toLowerCase();
+          return lower.includes('walk') || lower.includes('treadmill');
+        })
+      ) {
         const walkId = `d${day.dayIndex}-v${seed}-e${exercises.length}`;
         exercises.push({
           id: walkId,
