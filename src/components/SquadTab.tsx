@@ -26,8 +26,10 @@ import {
   getShortGoalLabel,
   resolveTheme,
 } from '../services/theme';
+import { isSupabaseConfigured } from '../lib/supabase';
 import { getTodaySplitDayIndex } from '../services/db';
 import {
+  fetchDiscoverableSupabaseAthletes,
   refreshSquadLiveStatuses,
   searchSupabaseAthletes,
 } from '../services/supabaseSync';
@@ -54,24 +56,44 @@ export function SquadTab({
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [searchingCloud, setSearchingCloud] = useState(false);
   const [remoteSearchResults, setRemoteSearchResults] = useState<UserProfile[] | null>(null);
+  const [discoverableCloudUsers, setDiscoverableCloudUsers] = useState<UserProfile[] | null>(null);
 
   const todayIdx = getTodaySplitDayIndex();
+  const supabaseLive = isSupabaseConfigured();
+  const [loadingDiscover, setLoadingDiscover] = useState<boolean>(supabaseLive);
 
-  // Refresh live daily_logs & profiles for added Squad members on mount/update
+  // Refresh live daily_logs & profiles for added Squad members AND fetch discoverable athletes on mount
   useEffect(() => {
     let cancelled = false;
-    if (activeUser.squadIds.length === 0) return;
+    if (supabaseLive) {
+      setLoadingDiscover(true);
+    }
 
-    refreshSquadLiveStatuses(activeUser.squadIds).then((refreshed) => {
-      if (!cancelled && refreshed.length > 0) {
-        onSyncRemoteUsers?.(refreshed);
-      }
-    });
+    fetchDiscoverableSupabaseAthletes(activeUser.id)
+      .then(({ results, fromCloud }) => {
+        if (!cancelled && fromCloud) {
+          setDiscoverableCloudUsers(results);
+          if (results.length > 0) {
+            onSyncRemoteUsers?.(results);
+          }
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingDiscover(false);
+      });
+
+    if (activeUser.squadIds.length > 0) {
+      refreshSquadLiveStatuses(activeUser.squadIds).then((refreshed) => {
+        if (!cancelled && refreshed.length > 0) {
+          onSyncRemoteUsers?.(refreshed);
+        }
+      });
+    }
 
     return () => {
       cancelled = true;
     };
-  }, [activeUser.id, activeUser.squadIds.join(',')]);
+  }, [activeUser.id, activeUser.squadIds.join(','), supabaseLive]);
 
   // Query Supabase profiles + daily_logs when user searches athletes
   useEffect(() => {
@@ -102,23 +124,35 @@ export function SquadTab({
     };
   }, [searchQuery, activeUser.id]);
 
+  // In cloud mode, strictly filter out local seeded demo-* profiles
+  const cloudSafeUsers = supabaseLive
+    ? allUsers.filter((u) => !u.id.startsWith('demo-'))
+    : allUsers;
+
   // Personal Squad Members
-  const squadMembers = allUsers.filter((u) => activeUser.squadIds.includes(u.id));
-  const otherAthletes = allUsers.filter((u) => u.id !== activeUser.id);
+  const squadMembers = cloudSafeUsers.filter((u) => activeUser.squadIds.includes(u.id));
+  const otherAthletes = cloudSafeUsers.filter((u) => u.id !== activeUser.id);
 
   const cleanQuery = searchQuery.trim().toLowerCase();
-  const localSearchResults = cleanQuery
-    ? otherAthletes.filter(
-        (u) =>
-          u.name.toLowerCase().includes(cleanQuery) ||
-          u.username.toLowerCase().includes(cleanQuery) ||
-          u.id.toLowerCase().includes(cleanQuery) ||
-          u.goal.toLowerCase().includes(cleanQuery)
-      )
-    : [];
-  const searchResults = remoteSearchResults ?? localSearchResults;
+  const localSearchResults =
+    !supabaseLive && cleanQuery
+      ? otherAthletes.filter(
+          (u) =>
+            u.name.toLowerCase().includes(cleanQuery) ||
+            u.email.toLowerCase().includes(cleanQuery) ||
+            u.username.toLowerCase().includes(cleanQuery) ||
+            u.id.toLowerCase().includes(cleanQuery) ||
+            u.goal.toLowerCase().includes(cleanQuery)
+        )
+      : [];
+  const searchResults = supabaseLive ? (remoteSearchResults ?? []) : (remoteSearchResults ?? localSearchResults);
 
-  const discoverSuggestions = otherAthletes.filter((u) => !activeUser.squadIds.includes(u.id));
+  const discoverBaseList = supabaseLive
+    ? (discoverableCloudUsers ?? otherAthletes)
+    : otherAthletes;
+  const discoverSuggestions = discoverBaseList.filter(
+    (u) => !activeUser.squadIds.includes(u.id)
+  );
 
   const rankedSquad = [...squadMembers].sort((a, b) => {
     if (a.dailyLog.workoutCompleted !== b.dailyLog.workoutCompleted) {
@@ -250,12 +284,14 @@ export function SquadTab({
                           </span>
                         </div>
                         <p className="text-[10px] text-white/55 truncate mt-0.5">
-                          {candidate.username} ·{' '}
                           <span style={{ color: cTheme.secondary }}>
                             {getShortGoalLabel(candidate.goal)}
                           </span>{' '}
-                          · {candidate.dailyLog.steps.toLocaleString()} steps ·{' '}
-                          {candidate.dailyLog.waterMl}ml
+                          · {getTodaySplitBadge(candidate)}
+                        </p>
+                        <p className="text-[10px] text-white/45 truncate font-mono-tabular">
+                          {candidate.dailyLog.waterMl}ml · {candidate.dailyLog.steps.toLocaleString()} steps ·{' '}
+                          {candidate.dailyLog.sleepHours.toFixed(1)}h sleep
                         </p>
                       </div>
                     </div>
@@ -299,33 +335,80 @@ export function SquadTab({
           </div>
         )}
 
-        {/* Quick Discover Suggestions when not searching and unadded athletes exist */}
+        {/* Registered Athletes Available to Add (auto-loaded from Supabase when search is empty) */}
+        {!cleanQuery && loadingDiscover && discoverSuggestions.length === 0 && (
+          <div className="pt-1 flex items-center gap-2 text-xs text-white/55">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <span>Loading registered athletes...</span>
+          </div>
+        )}
+
         {!cleanQuery && discoverSuggestions.length > 0 && (
           <div className="pt-1 space-y-2">
-            <p className="text-[11px] font-medium text-white/50">
-              Athletes Available to Add
-            </p>
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
-              {discoverSuggestions.map((candidate) => (
-                <button
-                  key={candidate.id}
-                  type="button"
-                  onClick={() => onToggleSquadMember(candidate.id)}
-                  className="shrink-0 min-h-[40px] pl-1.5 pr-3 py-1 rounded-2xl bg-[#1A1D28] border border-white/10 hover:border-white/25 flex items-center gap-2 transition-all active:scale-95"
-                >
-                  <AthleteAvatar
-                    name={candidate.name}
-                    avatarUrl={candidate.avatarUrl}
-                    gender={candidate.gender}
-                    sizeClass="w-7 h-7"
-                    ring={false}
-                  />
-                  <span className="text-[11px] font-semibold text-white whitespace-nowrap">
-                    {candidate.name.split(/\s+/)[0]}
-                  </span>
-                  <Plus className="w-3.5 h-3.5" style={{ color: theme.secondary }} />
-                </button>
-              ))}
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-semibold text-white/55">
+                Registered Athletes ({discoverSuggestions.length})
+              </p>
+              <span className="text-[10px] text-white/40">Tap to inspect or add</span>
+            </div>
+            <div className="space-y-2 max-h-[240px] overflow-y-auto pr-0.5">
+              {discoverSuggestions.map((candidate) => {
+                const cTheme = resolveTheme(candidate.gender);
+                return (
+                  <div
+                    key={candidate.id}
+                    onClick={() => setSelectedFriendId(candidate.id)}
+                    className="p-2.5 rounded-2xl bg-[#1A1D28]/90 border border-white/[0.08] hover:border-white/20 flex items-center justify-between gap-2.5 cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <AthleteAvatar
+                        name={candidate.name}
+                        avatarUrl={candidate.avatarUrl}
+                        gender={candidate.gender}
+                        sizeClass="w-9 h-9"
+                      />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-bold text-white truncate">{candidate.name}</p>
+                          <span
+                            className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap"
+                            style={
+                              candidate.dailyLog.workoutCompleted
+                                ? { backgroundColor: cTheme.softBg, color: cTheme.secondary }
+                                : { backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.65)' }
+                            }
+                          >
+                            {candidate.dailyLog.workoutCompleted ? 'Crushed It' : 'In Progress'}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-white/55 truncate mt-0.5">
+                          <span style={{ color: cTheme.secondary }}>
+                            {getShortGoalLabel(candidate.goal)}
+                          </span>{' '}
+                          · {getTodaySplitBadge(candidate)}
+                        </p>
+                        <p className="text-[10px] text-white/45 truncate font-mono-tabular">
+                          {candidate.dailyLog.waterMl}ml · {candidate.dailyLog.steps.toLocaleString()} steps ·{' '}
+                          {candidate.dailyLog.sleepHours.toFixed(1)}h sleep
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleSquadMember(candidate.id);
+                      }}
+                      className="min-h-[36px] px-3 rounded-xl text-[11px] font-semibold text-white flex items-center gap-1 shrink-0 transition-all active:scale-95"
+                      style={{ background: theme.gradientCss }}
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add</span>
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

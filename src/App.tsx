@@ -38,9 +38,11 @@ import { ToastOverlay } from './components/ToastOverlay';
 
 export default function App() {
   const [users, setUsers] = useState<UserProfile[]>(() => db.getUsers());
-  const [activeUser, setActiveUser] = useState<UserProfile | null>(() => db.getActiveUser());
+  const [activeUser, setActiveUser] = useState<UserProfile | null>(() =>
+    isSupabaseConfigured() ? null : db.getActiveUser()
+  );
   const [viewMode, setViewMode] = useState<'auth' | 'onboarding' | 'app'>(() =>
-    db.getActiveUser() ? 'app' : 'auth'
+    isSupabaseConfigured() ? 'auth' : db.getActiveUser() ? 'app' : 'auth'
   );
   const [onboardingPrefill, setOnboardingPrefill] = useState<{
     email?: string;
@@ -89,6 +91,10 @@ export default function App() {
         if (cancelled) return;
         if (cloudUser) {
           applyHydratedUser(cloudUser);
+        } else {
+          db.signOut();
+          setActiveUser(null);
+          setViewMode('auth');
         }
       })
       .finally(() => {
@@ -225,21 +231,26 @@ export default function App() {
     split: UserProfile['split'];
     quotes: string[];
     blueprintSource: 'gemini-2.5-flash' | 'kinetix-engine';
-  }) => {
+  }): Promise<string | undefined> => {
     manualAuthInFlightRef.current = true;
     try {
-      const { user: created, notice } = await signUpWithSupabase(data);
+      const res = await signUpWithSupabase(data);
+      if (res.error || !res.user) {
+        return res.error ?? 'Unable to create athlete account.';
+      }
+      const created = res.user;
       syncUsers(created);
       setSelectedWorkoutDay(getTodaySplitDayIndex());
       setActiveTab('home');
       setViewMode('app');
       pushToast({
         title: 'Custom Blueprint Ready',
-        body: notice
-          ? `${created.name.split(/\s+/)[0]}, ${notice}`
+        body: res.notice
+          ? `${created.name.split(/\s+/)[0]}, ${res.notice}`
           : `${created.name.split(/\s+/)[0]}, your 7-day ${created.goal} routine is active.`,
         category: 'success',
       });
+      return undefined;
     } finally {
       manualAuthInFlightRef.current = false;
     }

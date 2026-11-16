@@ -132,7 +132,10 @@ function resolveGoalStrict(gender: Gender, rawGoal: unknown): PhysiqueGoal {
   return match ? match.title : allowedGoals[0].title;
 }
 
-function extractCompletedExercisesPayload(user: UserProfile, targetDayIndex?: number): CompletedExercisesSnapshot {
+function extractCompletedExercisesPayload(
+  user: UserProfile,
+  targetDayIndex?: number
+): CompletedExercisesSnapshot {
   const dayIdx =
     typeof targetDayIndex === 'number'
       ? targetDayIndex
@@ -221,13 +224,12 @@ function mapSupabaseRowsToUserProfile(
   logs: DailyLogRow[],
   options?: { allowBackfillMissingPlan?: boolean }
 ): UserProfile {
-  // Strictly scope local auxiliary cache to THIS exact profile.id (never bleed across users)
   const scopedCache = db.getUserCache(profile.id);
 
   const gender = resolveGenderStrict(profile.gender, profile.goal);
   const goal = resolveGoalStrict(gender, profile.goal);
 
-  const displayName = (profile.display_name || scopedCache?.name || 'Athlete').trim();
+  const displayName = (profile.display_name || scopedCache?.name || profile.email?.split('@')[0] || 'Athlete').trim();
   const weightKg = Number(profile.weight) || scopedCache?.metrics.weightKg || (gender === 'female' ? 58 : 80);
   const heightCm = Number(profile.height) || scopedCache?.metrics.heightCm || (gender === 'female' ? 167 : 181);
   const age = scopedCache?.metrics.age || 26;
@@ -257,6 +259,7 @@ function mapSupabaseRowsToUserProfile(
       .filter((l) => Boolean(getLogDate(l)))
       .map((l) => [getLogDate(l), l])
   );
+  // Pick today's row, or fallback to latest row if date differs slightly on remote
   const todayRow = logByDate.get(today);
 
   const split = applyTodayCompletedExercises(baseSplit, todayRow);
@@ -300,7 +303,6 @@ function mapSupabaseRowsToUserProfile(
     };
   });
 
-  // Merge measurements_json from profiles with any 30-day body_weight entries from daily_logs
   const cloudMeasurements = Array.isArray(profile.measurements_json)
     ? profile.measurements_json
     : [];
@@ -341,7 +343,6 @@ function mapSupabaseRowsToUserProfile(
     }
   }
 
-  // Derive recent workouts from 30-day daily_logs if not locally populated
   const derivedRecentWorkouts: RecentWorkoutEntry[] = sortedLogs
     .filter((r) => r.workout_completed)
     .reverse()
@@ -411,7 +412,6 @@ function mapSupabaseRowsToUserProfile(
     createdAt: profile.created_at || scopedCache?.createdAt || new Date().toISOString(),
   };
 
-  // If user_plans was missing for this authenticated user, immediately backfill it with their gender+goal split
   if (options?.allowBackfillMissingPlan && !hasValidPlanSplit) {
     void syncUserPlanToSupabase(mapped);
   }
@@ -450,6 +450,7 @@ function toCoreProfilePayload(user: UserProfile) {
     workout_time: user.schedule.workoutTime,
     bed_time: user.schedule.bedTime,
     streak: user.streakDays,
+    current_split_day: user.currentSplitDay ?? getTodaySplitDayIndex(),
   };
 }
 
@@ -485,17 +486,6 @@ function toDailyLogPayload(user: UserProfile, activeDayIndex?: number) {
   };
 }
 
-function isNetworkOrOfflineError(err: unknown): boolean {
-  if (typeof navigator !== 'undefined' && navigator.onLine === false) return true;
-  const msg =
-    err instanceof Error
-      ? err.message
-      : typeof err === 'object' && err !== null && 'message' in err
-        ? String((err as { message: unknown }).message)
-        : String(err ?? '');
-  return /fetch|network|offline|timeout|abort|enotfound|econnrefused/i.test(msg);
-}
-
 async function fetch30DayLogsForUsers(userIds: string[]): Promise<DailyLogRow[]> {
   if (!supabase || userIds.length === 0) return [];
   const thirtyDaysAgoISO = getDateKeyOffset(29);
@@ -519,7 +509,6 @@ async function fetch30DayLogsForUsers(userIds: string[]): Promise<DailyLogRow[]>
     return primaryRes.data as DailyLogRow[];
   }
 
-  // Graceful fallback if table uses `log_date` instead of `date`
   const fallbackDateCol =
     userIds.length === 1
       ? await supabase
@@ -539,13 +528,76 @@ async function fetch30DayLogsForUsers(userIds: string[]): Promise<DailyLogRow[]>
     return fallbackDateCol.data as DailyLogRow[];
   }
 
-  // Final unordered fallback
   const bareRes =
     userIds.length === 1
       ? await supabase.from('daily_logs').select('*').eq('user_id', userIds[0]).limit(60)
       : await supabase.from('daily_logs').select('*').in('user_id', userIds).limit(120);
 
   return (bareRes.data as DailyLogRow[] | null) ?? [];
+}
+
+function buildUserProfileFromAuthUser(authUser: SupabaseAuthUser): UserProfile {
+  const scopedCache = db.getUserCache(authUser.id);
+  const meta = (authUser.user_metadata ?? {}) as Record<string, unknown>;
+  const email = (authUser.email ?? scopedCache?.email ?? '').trim().toLowerCase();
+
+  const gender = resolveGenderStrict(
+    meta.gender ?? scopedCache?.gender,
+    meta.goal ?? scopedCache?.goal
+  );
+  const goal = resolveGoalStrict(gender, meta.goal ?? scopedCache?.goal);
+  const weightKg =
+    Number(meta.weight) || scopedCache?.metrics.weightKg || (gender === 'female' ? 58 : 80);
+  const heightCm =
+    Number(meta.height) || scopedCache?.metrics.heightCm || (gender === 'female' ? 167 : 181);
+  const age = Number(meta.age) || scopedCache?.metrics.age || 26;
+  const displayName =
+    (typeof meta.display_name === 'string' && meta.display_name.trim()) ||
+    (typeof meta.name === 'string' && meta.name.trim()) ||
+    scopedCache?.name ||
+    email.split('@')[0] ||
+    'Athlete';
+  const vibe: MotivationVibe =
+    meta.vibe === 'Unapologetic Hype' || meta.vibe === 'Elite Discipline'
+      ? meta.vibe
+      : scopedCache?.schedule.vibe || 'Confident & Indulging';
+
+  const split =
+    scopedCache?.split?.length === 7 && scopedCache.gender === gender
+      ? scopedCache.split
+      : buildVariedSplit(gender, goal, weightKg, 0);
+  const quotes =
+    scopedCache?.quotes?.length
+      ? scopedCache.quotes
+      : buildVariedQuotes(displayName, vibe, 0);
+
+  return db.createUserProfile({
+    id: authUser.id,
+    name: displayName,
+    email,
+    password: '',
+    gender,
+    goal,
+    metrics: { heightCm, weightKg, age },
+    schedule: {
+      workoutTime:
+        typeof meta.workout_time === 'string'
+          ? meta.workout_time
+          : scopedCache?.schedule.workoutTime || '18:00',
+      wakeTime:
+        typeof meta.wake_time === 'string'
+          ? meta.wake_time
+          : scopedCache?.schedule.wakeTime || '06:30',
+      bedTime:
+        typeof meta.bed_time === 'string'
+          ? meta.bed_time
+          : scopedCache?.schedule.bedTime || '22:30',
+      vibe,
+    },
+    split,
+    quotes,
+    blueprintSource: 'kinetix-engine',
+  });
 }
 
 export async function hydrateAuthenticatedUserFromSupabase(
@@ -558,12 +610,6 @@ export async function hydrateAuthenticatedUserFromSupabase(
     .select('*')
     .eq('id', authUser.id)
     .maybeSingle();
-
-  // If query itself failed (network/RLS error), do NOT overwrite remote data with defaults;
-  // return per-user scoped cache if present so offline mode stays intact.
-  if (profileErr) {
-    return db.getUserCache(authUser.id);
-  }
 
   if (profileData) {
     const [planRes, logs] = await Promise.all([
@@ -581,56 +627,22 @@ export async function hydrateAuthenticatedUserFromSupabase(
     return db.upsertSyncedUser(hydrated, true);
   }
 
-  // Truly no `profiles` row yet (e.g., email-confirmed signup logging in for the very first time).
-  // Recover from per-user cache or authUser.user_metadata — NEVER assume 'female' if metadata/cache says 'male'.
-  const scopedCache = db.getUserCache(authUser.id);
-  if (scopedCache) {
-    const synced = db.upsertSyncedUser(scopedCache, true);
-    void syncAllUserTablesToSupabase(synced);
-    return synced;
+  // If no row exists yet in public.profiles (e.g., older Auth account or first confirmed login),
+  // create the profile & user_plans row immediately using user_metadata so login NEVER fails or kicks them out.
+  if (!profileErr) {
+    const created = buildUserProfileFromAuthUser(authUser);
+    db.saveUserCache(created);
+    await syncAllUserTablesToSupabase(created);
+    return db.upsertSyncedUser(created, true);
   }
 
-  const meta = (authUser.user_metadata ?? {}) as Record<string, unknown>;
-  const email = (authUser.email ?? '').trim().toLowerCase();
-  const metaGender = resolveGenderStrict(meta.gender, meta.goal);
-  const metaGoal = resolveGoalStrict(metaGender, meta.goal);
-  const metaWeight =
-    Number(meta.weight) || (metaGender === 'female' ? 58 : 80);
-  const metaHeight =
-    Number(meta.height) || (metaGender === 'female' ? 167 : 181);
-  const metaAge = Number(meta.age) || 26;
-  const metaName =
-    (typeof meta.display_name === 'string' && meta.display_name.trim()) ||
-    (typeof meta.name === 'string' && meta.name.trim()) ||
-    email.split('@')[0] ||
-    'Athlete';
-  const metaVibe: MotivationVibe =
-    meta.vibe === 'Unapologetic Hype' || meta.vibe === 'Elite Discipline'
-      ? meta.vibe
-      : 'Confident & Indulging';
+  // If transient query error occurred, return scoped cache or build cleanly from auth metadata
+  const cached = db.getUserCache(authUser.id);
+  if (cached) return db.upsertSyncedUser(cached, true);
 
-  const created = db.createUserProfile({
-    id: authUser.id,
-    name: metaName,
-    email,
-    password: '',
-    gender: metaGender,
-    goal: metaGoal,
-    metrics: { heightCm: metaHeight, weightKg: metaWeight, age: metaAge },
-    schedule: {
-      workoutTime: typeof meta.workout_time === 'string' ? meta.workout_time : '18:00',
-      wakeTime: typeof meta.wake_time === 'string' ? meta.wake_time : '06:30',
-      bedTime: typeof meta.bed_time === 'string' ? meta.bed_time : '22:30',
-      vibe: metaVibe,
-    },
-    split: buildVariedSplit(metaGender, metaGoal, metaWeight, 0),
-    quotes: buildVariedQuotes(metaName, metaVibe, 0),
-    blueprintSource: 'kinetix-engine',
-  });
-
-  db.saveUserCache(created);
-  void syncAllUserTablesToSupabase(created);
-  return created;
+  const fallbackCreated = buildUserProfileFromAuthUser(authUser);
+  void syncAllUserTablesToSupabase(fallbackCreated);
+  return db.upsertSyncedUser(fallbackCreated, true);
 }
 
 export async function restoreSupabaseSession(): Promise<UserProfile | null> {
@@ -649,10 +661,13 @@ export async function signInWithSupabase(
   password: string
 ): Promise<{ user?: UserProfile; error?: string }> {
   const cleanEmail = email.trim().toLowerCase();
+
+  // Offline / AI Studio preview fallback when Supabase env vars are not set
   if (!isSupabaseConfigured() || !supabase) {
     return db.signInWithEmail(cleanEmail, password);
   }
 
+  // When Supabase IS configured: never check localStorage for password/account existence.
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: cleanEmail,
@@ -660,31 +675,25 @@ export async function signInWithSupabase(
     });
 
     if (error) {
-      if (isNetworkOrOfflineError(error)) {
-        return db.signInWithEmail(cleanEmail, password);
-      }
-      const localAttempt = db.signInWithEmail(cleanEmail, password);
-      if (localAttempt.user) {
-        return localAttempt;
-      }
       return { error: error.message };
     }
 
     if (!data.user) {
-      return db.signInWithEmail(cleanEmail, password);
+      return { error: 'Authentication succeeded but no user record was returned.' };
     }
 
     const hydrated = await hydrateAuthenticatedUserFromSupabase(data.user);
-    if (hydrated) {
-      return { user: hydrated };
+    if (!hydrated) {
+      return { error: 'Unable to load athlete profile from Supabase.' };
     }
-
-    return { error: 'Unable to load athlete profile from database.' };
+    return { user: hydrated };
   } catch (err) {
-    if (isNetworkOrOfflineError(err)) {
-      return db.signInWithEmail(cleanEmail, password);
-    }
-    return db.signInWithEmail(cleanEmail, password);
+    return {
+      error:
+        err instanceof Error
+          ? err.message
+          : 'Network error contacting Supabase authentication.',
+    };
   }
 }
 
@@ -699,7 +708,7 @@ export async function signUpWithSupabase(input: {
   split: WorkoutDay[];
   quotes: string[];
   blueprintSource: 'gemini-2.5-flash' | 'kinetix-engine';
-}): Promise<{ user: UserProfile; syncedToCloud: boolean; notice?: string }> {
+}): Promise<{ user?: UserProfile; syncedToCloud: boolean; notice?: string; error?: string }> {
   const cleanEmail = input.email.trim().toLowerCase();
 
   if (!isSupabaseConfigured() || !supabase) {
@@ -728,13 +737,12 @@ export async function signUpWithSupabase(input: {
       },
     });
 
-    if (error || !data.user) {
-      const localUser = db.createUserProfile(input);
-      return {
-        user: localUser,
-        syncedToCloud: false,
-        notice: error?.message,
-      };
+    if (error) {
+      return { syncedToCloud: false, error: error.message };
+    }
+
+    if (!data.user) {
+      return { syncedToCloud: false, error: 'Signup completed without a user ID.' };
     }
 
     const created = db.createUserProfile({
@@ -743,19 +751,23 @@ export async function signUpWithSupabase(input: {
     });
     db.saveUserCache(created);
 
-    if (data.session) {
-      const ok = await syncAllUserTablesToSupabase(created);
-      return { user: created, syncedToCloud: ok };
+    // Immediately upsert profile, gender-matched 6-exercise workout plan, and initial daily log
+    const ok = await syncAllUserTablesToSupabase(created);
+
+    if (!data.session && !ok) {
+      return {
+        user: created,
+        syncedToCloud: false,
+        notice: 'Check your email to confirm your account, then sign in from any device.',
+      };
     }
 
+    return { user: created, syncedToCloud: ok };
+  } catch (err) {
     return {
-      user: created,
       syncedToCloud: false,
-      notice: 'Account created. Check your email to confirm cloud sync.',
+      error: err instanceof Error ? err.message : 'Unable to reach Supabase signup.',
     };
-  } catch {
-    const localUser = db.createUserProfile(input);
-    return { user: localUser, syncedToCloud: false };
   }
 }
 
@@ -780,7 +792,7 @@ export async function syncProfileToSupabase(user: UserProfile): Promise<boolean>
 
     if (!error) return true;
 
-    // Fallback smoothly if an existing table lacks optional extended JSON/int columns
+    // Fallback if extended optional columns (measurements_json, squad_ids) are absent
     const { error: squadOnlyErr } = await supabase
       .from('profiles')
       .upsert({ ...toCoreProfilePayload(user), squad_ids: user.squadIds }, { onConflict: 'id' });
@@ -789,7 +801,13 @@ export async function syncProfileToSupabase(user: UserProfile): Promise<boolean>
     const { error: coreError } = await supabase
       .from('profiles')
       .upsert(toCoreProfilePayload(user), { onConflict: 'id' });
-    return !coreError;
+    if (!coreError) return true;
+
+    const { current_split_day: _ignored, ...strictMinimal } = toCoreProfilePayload(user);
+    const { error: minimalErr } = await supabase
+      .from('profiles')
+      .upsert(strictMinimal, { onConflict: 'id' });
+    return !minimalErr;
   } catch {
     return false;
   }
@@ -830,7 +848,6 @@ export async function syncDailyLogToSupabase(
       .upsert(payload, { onConflict: 'user_id,date' });
     if (!error) return true;
 
-    // Fallback if remote table uses `log_date` or fewer optional columns
     const { date: dateVal, ...rest } = payload;
     const { error: coreDateErr } = await supabase
       .from('daily_logs')
@@ -875,6 +892,67 @@ export async function syncAllUserTablesToSupabase(user: UserProfile): Promise<bo
   }
 }
 
+async function hydrateProfileRowsWithPlansAndLogs(profiles: ProfileRow[]): Promise<UserProfile[]> {
+  if (!supabase || profiles.length === 0) return [];
+  const ids = profiles.map((p) => p.id);
+
+  const [plansRes, logs] = await Promise.all([
+    supabase.from('user_plans').select('*').in('user_id', ids),
+    fetch30DayLogsForUsers(ids),
+  ]);
+
+  const plansByUser = new Map<string, UserPlanRow>(
+    ((plansRes.data as UserPlanRow[] | null) ?? []).map((pl) => [pl.user_id, pl])
+  );
+
+  const logsByUser = new Map<string, DailyLogRow[]>();
+  for (const row of logs) {
+    const existing = logsByUser.get(row.user_id) ?? [];
+    existing.push(row);
+    logsByUser.set(row.user_id, existing);
+  }
+
+  const cloudUsers = profiles.map((p) =>
+    mapSupabaseRowsToUserProfile(
+      p,
+      plansByUser.get(p.id) ?? null,
+      logsByUser.get(p.id) ?? []
+    )
+  );
+
+  db.mergeRemoteUsers(cloudUsers);
+  return cloudUsers;
+}
+
+export async function fetchDiscoverableSupabaseAthletes(
+  activeUserId: string
+): Promise<{ results: UserProfile[]; fromCloud: boolean }> {
+  const localDiscoverable = db
+    .getUsers()
+    .filter((u) => u.id !== activeUserId);
+
+  if (!isSupabaseConfigured() || !supabase) {
+    return { results: localDiscoverable, fromCloud: false };
+  }
+
+  try {
+    const { data: profileRows, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .neq('id', activeUserId)
+      .limit(20);
+
+    if (error || !profileRows) {
+      return { results: localDiscoverable, fromCloud: false };
+    }
+
+    const cloudUsers = await hydrateProfileRowsWithPlansAndLogs(profileRows as ProfileRow[]);
+    return { results: cloudUsers, fromCloud: true };
+  } catch {
+    return { results: localDiscoverable, fromCloud: false };
+  }
+}
+
 export async function searchSupabaseAthletes(
   query: string,
   activeUserId: string
@@ -886,67 +964,35 @@ export async function searchSupabaseAthletes(
     const q = clean.toLowerCase();
     return (
       u.name.toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
       u.username.toLowerCase().includes(q) ||
-      u.id.toLowerCase().includes(q) ||
       u.goal.toLowerCase().includes(q)
     );
   });
 
-  if (!clean || !isSupabaseConfigured() || !supabase) {
+  if (!clean) {
+    return fetchDiscoverableSupabaseAthletes(activeUserId);
+  }
+
+  if (!isSupabaseConfigured() || !supabase) {
     return { results: localMatches, fromCloud: false };
   }
 
   try {
+    const safeQ = clean.replace(/[,()"]/g, '').trim();
     const { data: profileRows, error } = await supabase
       .from('profiles')
       .select('*')
-      .ilike('display_name', `%${clean}%`)
       .neq('id', activeUserId)
+      .or(`display_name.ilike.%${safeQ}%,email.ilike.%${safeQ}%`)
       .limit(20);
 
     if (error || !profileRows) {
       return { results: localMatches, fromCloud: false };
     }
 
-    const profiles = profileRows as ProfileRow[];
-    if (profiles.length === 0) {
-      return { results: localMatches, fromCloud: true };
-    }
-
-    const ids = profiles.map((p) => p.id);
-    const [plansRes, logs] = await Promise.all([
-      supabase.from('user_plans').select('*').in('user_id', ids),
-      fetch30DayLogsForUsers(ids),
-    ]);
-
-    const plansByUser = new Map<string, UserPlanRow>(
-      ((plansRes.data as UserPlanRow[] | null) ?? []).map((pl) => [pl.user_id, pl])
-    );
-
-    const logsByUser = new Map<string, DailyLogRow[]>();
-    for (const row of logs) {
-      const existing = logsByUser.get(row.user_id) ?? [];
-      existing.push(row);
-      logsByUser.set(row.user_id, existing);
-    }
-
-    const cloudUsers = profiles.map((p) =>
-      mapSupabaseRowsToUserProfile(
-        p,
-        plansByUser.get(p.id) ?? null,
-        logsByUser.get(p.id) ?? []
-      )
-    );
-
-    db.mergeRemoteUsers(cloudUsers);
-
-    const seenIds = new Set(cloudUsers.map((u) => u.id));
-    const mergedResults = [
-      ...cloudUsers,
-      ...localMatches.filter((u) => !seenIds.has(u.id)),
-    ];
-
-    return { results: mergedResults, fromCloud: true };
+    const cloudUsers = await hydrateProfileRowsWithPlansAndLogs(profileRows as ProfileRow[]);
+    return { results: cloudUsers, fromCloud: true };
   } catch {
     return { results: localMatches, fromCloud: false };
   }
@@ -961,36 +1007,14 @@ export async function refreshSquadLiveStatuses(
   }
 
   try {
-    const [profilesRes, plansRes, logs] = await Promise.all([
-      supabase.from('profiles').select('*').in('id', validIds),
-      supabase.from('user_plans').select('*').in('user_id', validIds),
-      fetch30DayLogsForUsers(validIds),
-    ]);
+    const { data: profilesData, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('id', validIds);
 
-    if (profilesRes.error || !profilesRes.data) return [];
+    if (error || !profilesData) return [];
 
-    const plansByUser = new Map<string, UserPlanRow>(
-      ((plansRes.data as UserPlanRow[] | null) ?? []).map((pl) => [pl.user_id, pl])
-    );
-    const logsByUser = new Map<string, DailyLogRow[]>();
-    for (const row of logs) {
-      const existing = logsByUser.get(row.user_id) ?? [];
-      existing.push(row);
-      logsByUser.set(row.user_id, existing);
-    }
-
-    const refreshed = (profilesRes.data as ProfileRow[]).map((p) =>
-      mapSupabaseRowsToUserProfile(
-        p,
-        plansByUser.get(p.id) ?? null,
-        logsByUser.get(p.id) ?? []
-      )
-    );
-
-    if (refreshed.length > 0) {
-      db.mergeRemoteUsers(refreshed);
-    }
-    return refreshed;
+    return await hydrateProfileRowsWithPlansAndLogs(profilesData as ProfileRow[]);
   } catch {
     return [];
   }

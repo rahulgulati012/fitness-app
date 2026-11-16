@@ -1,8 +1,9 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
-const supabaseUrl = (env?.VITE_SUPABASE_URL ?? '').trim();
-const supabaseKey = (
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const env = (import.meta as any).env;
+const supabaseUrl: string = (env?.VITE_SUPABASE_URL ?? '').trim();
+const supabaseKey: string = (
   env?.VITE_SUPABASE_PUBLISHABLE_KEY ||
   env?.VITE_SUPABASE_ANON_KEY ||
   ''

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Bell, ChevronDown, Flame, LogOut, Plus, RefreshCw, X } from 'lucide-react';
 import type { ThemeTokens, UserProfile } from '../types/kinetix';
+import { isSupabaseConfigured } from '../lib/supabase';
 import { getShortGoalLabel } from '../services/theme';
 import { AthleteAvatar } from './AthleteAvatar';
 
@@ -60,20 +61,22 @@ export function TopBar({
             </div>
           </div>
 
-          {/* Right: Quick Switcher + Streak + Notification Bell */}
+          {/* Right: Quick Switcher (offline demo only) + Streak + Notification Bell */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => {
-                setSwitcherOpen((v) => !v);
-                setNotifOpen(false);
-              }}
-              aria-label="Switch athlete profile"
-              className="min-h-[38px] px-2.5 rounded-xl bg-[#1A1D28] border border-white/10 hover:border-white/25 text-xs font-medium text-white/85 flex items-center gap-1 transition-colors whitespace-nowrap shrink-0"
-            >
-              <RefreshCw className="w-3.5 h-3.5" style={{ color: theme.secondary }} />
-              <ChevronDown className="w-3 h-3 text-white/50" />
-            </button>
+            {!isSupabaseConfigured() && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSwitcherOpen((v) => !v);
+                  setNotifOpen(false);
+                }}
+                aria-label="Switch athlete profile"
+                className="min-h-[38px] px-2.5 rounded-xl bg-[#1A1D28] border border-white/10 hover:border-white/25 text-xs font-medium text-white/85 flex items-center gap-1 transition-colors whitespace-nowrap shrink-0"
+              >
+                <RefreshCw className="w-3.5 h-3.5" style={{ color: theme.secondary }} />
+                <ChevronDown className="w-3 h-3 text-white/50" />
+              </button>
+            )}
 
             <div
               className="min-h-[38px] px-2.5 rounded-xl bg-[#1A1D28] border border-white/10 flex items-center gap-1 text-xs font-semibold font-mono-tabular whitespace-nowrap shrink-0"
