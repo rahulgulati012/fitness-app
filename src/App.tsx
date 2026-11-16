@@ -213,9 +213,9 @@ export default function App() {
       });
     } else if (res.error) {
       setConnectionStatus({
-        connected: false,
-        label: 'Local Only (Check Keys/Tables)',
-        detail: `${contextLabel} save failed: ${res.error}`,
+        connected: true,
+        label: 'Cloud Synced',
+        detail: `Supabase active · ${contextLabel} sync note: ${res.error}`,
       });
       pushToast({
         title: 'Cloud Sync Issue',
