@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import type {
   PhysiqueGoal,
   ReminderSettings,
@@ -6,8 +7,10 @@ import type {
   ToastMessage,
   UserProfile,
 } from './types/kinetix';
+import { isSupabaseConfigured, supabase } from './lib/supabase';
 import { db, getTodaySplitDayIndex } from './services/db';
 import {
+  hydrateAuthenticatedUserFromSupabase,
   restoreSupabaseSession,
   signInWithSupabase,
   signOutFromSupabase,
@@ -49,27 +52,81 @@ export default function App() {
   );
   const [cloudModalOpen, setCloudModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(() => isSupabaseConfigured());
+  const manualAuthInFlightRef = useRef(false);
 
+  // Never compute gender theme while auth is loading; wait for profile row
   const theme = resolveTheme(
-    viewMode === 'app' && activeUser ? activeUser.gender : null
+    !isAuthLoading && viewMode === 'app' && activeUser ? activeUser.gender : null
   );
 
   useEffect(() => {
     applyThemeCssVars(theme);
   }, [theme]);
 
-  // Restore active Supabase session (if configured and signed in) on boot
+  // Boot session restoration & real-time Supabase onAuthStateChange listener
   useEffect(() => {
+    if (!isSupabaseConfigured() || !supabase) {
+      setIsAuthLoading(false);
+      return;
+    }
+
     let cancelled = false;
-    restoreSupabaseSession().then((cloudUser) => {
-      if (!cancelled && cloudUser) {
-        setUsers(db.getUsers());
-        setActiveUser(cloudUser);
-        setViewMode('app');
+
+    const applyHydratedUser = (cloudUser: UserProfile) => {
+      setUsers(db.getUsers());
+      setActiveUser(cloudUser);
+      setSelectedWorkoutDay(
+        typeof cloudUser.currentSplitDay === 'number'
+          ? cloudUser.currentSplitDay
+          : getTodaySplitDayIndex()
+      );
+      setViewMode('app');
+    };
+
+    restoreSupabaseSession()
+      .then((cloudUser) => {
+        if (cancelled) return;
+        if (cloudUser) {
+          applyHydratedUser(cloudUser);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsAuthLoading(false);
+      });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return;
+
+      if (event === 'SIGNED_OUT') {
+        db.signOut();
+        setActiveUser(null);
+        setViewMode('auth');
+        setIsAuthLoading(false);
+        return;
+      }
+
+      if (
+        (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') &&
+        session?.user &&
+        !manualAuthInFlightRef.current
+      ) {
+        setIsAuthLoading(true);
+        hydrateAuthenticatedUserFromSupabase(session.user)
+          .then((cloudUser) => {
+            if (!cancelled && cloudUser) {
+              applyHydratedUser(cloudUser);
+            }
+          })
+          .finally(() => {
+            if (!cancelled) setIsAuthLoading(false);
+          });
       }
     });
+
     return () => {
       cancelled = true;
+      authListener.subscription.unsubscribe();
     };
   }, []);
 
@@ -115,7 +172,11 @@ export default function App() {
     const switched = db.switchUser(userId);
     if (!switched) return;
     syncUsers(switched);
-    setSelectedWorkoutDay(getTodaySplitDayIndex());
+    setSelectedWorkoutDay(
+      typeof switched.currentSplitDay === 'number'
+        ? switched.currentSplitDay
+        : getTodaySplitDayIndex()
+    );
     setActiveTab('home');
     setViewMode('app');
   };
@@ -124,15 +185,28 @@ export default function App() {
     email: string,
     password: string
   ): Promise<string | undefined> => {
-    const res = await signInWithSupabase(email, password);
-    if (res.error || !res.user) {
-      return res.error ?? 'Unable to sign in.';
+    manualAuthInFlightRef.current = true;
+    if (isSupabaseConfigured()) {
+      setIsAuthLoading(true);
     }
-    syncUsers(res.user);
-    setSelectedWorkoutDay(getTodaySplitDayIndex());
-    setActiveTab('home');
-    setViewMode('app');
-    return undefined;
+    try {
+      const res = await signInWithSupabase(email, password);
+      if (res.error || !res.user) {
+        return res.error ?? 'Unable to sign in.';
+      }
+      syncUsers(res.user);
+      setSelectedWorkoutDay(
+        typeof res.user.currentSplitDay === 'number'
+          ? res.user.currentSplitDay
+          : getTodaySplitDayIndex()
+      );
+      setActiveTab('home');
+      setViewMode('app');
+      return undefined;
+    } finally {
+      manualAuthInFlightRef.current = false;
+      setIsAuthLoading(false);
+    }
   };
 
   const handleStartOnboarding = (prefill?: { email?: string; password?: string }) => {
@@ -152,18 +226,23 @@ export default function App() {
     quotes: string[];
     blueprintSource: 'gemini-2.5-flash' | 'kinetix-engine';
   }) => {
-    const { user: created, notice } = await signUpWithSupabase(data);
-    syncUsers(created);
-    setSelectedWorkoutDay(getTodaySplitDayIndex());
-    setActiveTab('home');
-    setViewMode('app');
-    pushToast({
-      title: 'Custom Blueprint Ready',
-      body: notice
-        ? `${created.name.split(/\s+/)[0]}, ${notice}`
-        : `${created.name.split(/\s+/)[0]}, your 7-day ${created.goal} routine is active.`,
-      category: 'success',
-    });
+    manualAuthInFlightRef.current = true;
+    try {
+      const { user: created, notice } = await signUpWithSupabase(data);
+      syncUsers(created);
+      setSelectedWorkoutDay(getTodaySplitDayIndex());
+      setActiveTab('home');
+      setViewMode('app');
+      pushToast({
+        title: 'Custom Blueprint Ready',
+        body: notice
+          ? `${created.name.split(/\s+/)[0]}, ${notice}`
+          : `${created.name.split(/\s+/)[0]}, your 7-day ${created.goal} routine is active.`,
+        category: 'success',
+      });
+    } finally {
+      manualAuthInFlightRef.current = false;
+    }
   };
 
   const handleSignOut = () => {
@@ -234,26 +313,43 @@ export default function App() {
           theme={theme}
         />
 
-        {viewMode === 'auth' && (
-          <AuthScreen
-            users={users}
-            onQuickSwitch={handleQuickSwitch}
-            onEmailSignIn={handleEmailSignIn}
-            onStartOnboarding={handleStartOnboarding}
-            onOpenCloudModal={() => setCloudModalOpen(true)}
-          />
-        )}
+        {isAuthLoading ? (
+          <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center space-y-4">
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center border border-white/15 bg-[#12141C]"
+              style={{ boxShadow: `0 0 28px ${theme.glow}` }}
+            >
+              <Loader2 className="w-6 h-6 animate-spin" style={{ color: theme.primary }} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-white">Syncing Athlete Profile</p>
+              <p className="text-xs text-white/55">
+                Loading your routine, theme &amp; 30-day progress logs...
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {viewMode === 'auth' && (
+              <AuthScreen
+                users={users}
+                onQuickSwitch={handleQuickSwitch}
+                onEmailSignIn={handleEmailSignIn}
+                onStartOnboarding={handleStartOnboarding}
+                onOpenCloudModal={() => setCloudModalOpen(true)}
+              />
+            )}
 
-        {viewMode === 'onboarding' && (
-          <OnboardingWizard
-            initialEmail={onboardingPrefill.email}
-            initialPassword={onboardingPrefill.password}
-            onCancel={() => setViewMode(activeUser ? 'app' : 'auth')}
-            onComplete={handleOnboardingComplete}
-          />
-        )}
+            {viewMode === 'onboarding' && (
+              <OnboardingWizard
+                initialEmail={onboardingPrefill.email}
+                initialPassword={onboardingPrefill.password}
+                onCancel={() => setViewMode(activeUser ? 'app' : 'auth')}
+                onComplete={handleOnboardingComplete}
+              />
+            )}
 
-        {viewMode === 'app' && activeUser && (
+            {viewMode === 'app' && activeUser && (
           <>
             <TopBar
               activeUser={activeUser}
@@ -291,6 +387,12 @@ export default function App() {
                   }}
                   onStartSession={(dayIdx) => {
                     setSelectedWorkoutDay(dayIdx);
+                    const updated = db.updateUser(activeUser.id, (u) => ({
+                      ...u,
+                      currentSplitDay: dayIdx,
+                    }));
+                    syncUsers(updated);
+                    if (updated) void syncProfileToSupabase(updated);
                     setActiveTab('workout');
                   }}
                 />
@@ -301,11 +403,22 @@ export default function App() {
                   user={activeUser}
                   theme={theme}
                   selectedDayIndex={selectedWorkoutDay}
-                  onSelectDay={setSelectedWorkoutDay}
+                  onSelectDay={(dayIdx) => {
+                    setSelectedWorkoutDay(dayIdx);
+                    const updated = db.updateUser(activeUser.id, (u) => ({
+                      ...u,
+                      currentSplitDay: dayIdx,
+                    }));
+                    syncUsers(updated);
+                    if (updated) void syncProfileToSupabase(updated);
+                  }}
                   onToggleWarmupDrill={(dayIdx, drillId) => {
                     const updated = db.toggleWarmupDrill(activeUser.id, dayIdx, drillId);
                     syncUsers(updated);
-                    if (updated) void syncUserPlanToSupabase(updated);
+                    if (updated) {
+                      void syncUserPlanToSupabase(updated);
+                      void syncDailyLogToSupabase(updated, dayIdx);
+                    }
                   }}
                   onUpdateSet={(dayIdx, exId, setId, patch) => {
                     const updated = db.updateExerciseSet(
@@ -316,13 +429,16 @@ export default function App() {
                       patch
                     );
                     syncUsers(updated);
-                    if (updated) void syncUserPlanToSupabase(updated);
+                    if (updated) {
+                      void syncUserPlanToSupabase(updated);
+                      void syncDailyLogToSupabase(updated, dayIdx);
+                    }
                   }}
                   onFinishWorkout={(dayIdx) => {
                     const updated = db.completeWorkoutDay(activeUser.id, dayIdx);
                     syncUsers(updated);
                     if (updated) {
-                      void syncDailyLogToSupabase(updated);
+                      void syncDailyLogToSupabase(updated, dayIdx);
                       void syncUserPlanToSupabase(updated);
                       void syncProfileToSupabase(updated);
                     }
@@ -337,7 +453,10 @@ export default function App() {
                   onLogMeasurements={(entry) => {
                     const updated = db.logBodyMeasurement(activeUser.id, entry);
                     syncUsers(updated);
-                    if (updated) void syncProfileToSupabase(updated);
+                    if (updated) {
+                      void syncProfileToSupabase(updated);
+                      void syncDailyLogToSupabase(updated);
+                    }
                     pushToast({
                       title: 'Measurements Logged',
                       body: `Updated body weight to ${entry.weightKg} kg and synced physique graph.`,
@@ -439,6 +558,8 @@ export default function App() {
               onSelectTab={setActiveTab}
               theme={theme}
             />
+          </>
+        )}
           </>
         )}
 

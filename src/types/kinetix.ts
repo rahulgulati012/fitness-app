@@ -146,6 +146,7 @@ export interface UserProfile {
   notifications: NotificationItem[];
   blueprintSource: 'gemini-2.5-flash' | 'kinetix-engine';
   planVersion?: number;
+  currentSplitDay?: number;
   createdAt: string;
 }
 

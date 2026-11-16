@@ -13,6 +13,25 @@ import type {
 import { buildVariedQuotes, buildVariedSplit } from '../data/workoutEngine';
 
 const STORAGE_KEY = 'kinetix_db_v1';
+const USER_CACHE_PREFIX = 'kinetix_user_';
+
+function saveUserScopedCache(user: UserProfile): void {
+  try {
+    localStorage.setItem(`${USER_CACHE_PREFIX}${user.id}`, JSON.stringify(user));
+  } catch {
+    // Ignore storage quota issues gracefully
+  }
+}
+
+function loadUserScopedCache(userId: string): UserProfile | null {
+  try {
+    const raw = localStorage.getItem(`${USER_CACHE_PREFIX}${userId}`);
+    if (!raw) return null;
+    return JSON.parse(raw) as UserProfile;
+  } catch {
+    return null;
+  }
+}
 
 export const FEMALE_GOALS: {
   title: PhysiqueGoal;
@@ -85,7 +104,9 @@ create table if not exists public.profiles (
   workout_time text not null default '18:00',
   bed_time text not null default '22:30',
   streak integer not null default 1,
+  measurements_json jsonb not null default '[]'::jsonb,
   squad_ids jsonb not null default '[]'::jsonb,
+  current_split_day integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -101,13 +122,16 @@ create table if not exists public.user_plans (
 create table if not exists public.daily_logs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.profiles(id) on delete cascade not null,
-  log_date date not null default current_date,
+  date date not null default current_date,
   workout_completed boolean not null default false,
+  completed_exercises jsonb not null default '{}'::jsonb,
   water_ml integer not null default 0,
   steps_count integer not null default 0,
   sleep_hours numeric(3,1) not null default 8.0,
+  body_weight numeric(5,2),
+  split_name text,
   updated_at timestamptz not null default now(),
-  unique (user_id, log_date)
+  unique (user_id, date)
 );
 
 -- Row Level Security Policies
@@ -594,12 +618,26 @@ function loadState(): KinetixDbState {
 function saveState(state: KinetixDbState): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const active = state.activeUserId
+      ? state.users.find((u) => u.id === state.activeUserId)
+      : null;
+    if (active) {
+      saveUserScopedCache(active);
+    }
   } catch {
     // Ignore storage quota issues gracefully
   }
 }
 
 export const db = {
+  getUserCache(userId: string): UserProfile | null {
+    return loadUserScopedCache(userId);
+  },
+
+  saveUserCache(user: UserProfile): void {
+    saveUserScopedCache(user);
+  },
+
   getState(): KinetixDbState {
     return loadState();
   },
@@ -994,6 +1032,7 @@ export const db = {
     if (setActive) {
       state.activeUserId = hydrated.id;
     }
+    saveUserScopedCache(hydrated);
     saveState(state);
     return hydrated;
   },
