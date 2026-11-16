@@ -28,7 +28,7 @@ export function PWAInstallButton({ theme, compact = false }: PWAInstallButtonPro
         }}
       >
         <Download className="w-4 h-4" />
-        <span>Install Kinetix App</span>
+        <span>Install Gym Freak App</span>
       </button>
     );
   }
@@ -60,7 +60,7 @@ export function PWAInstallButton({ theme, compact = false }: PWAInstallButtonPro
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Smartphone className="w-4 h-4" style={{ color: theme.primary }} />
-                <h3 className="text-base font-bold text-white">Install Kinetix Fitness</h3>
+                <h3 className="text-base font-bold text-white">Install Gym Freak</h3>
               </div>
               <button
                 type="button"
@@ -76,13 +76,13 @@ export function PWAInstallButton({ theme, compact = false }: PWAInstallButtonPro
               <div className="space-y-2.5 text-xs text-white/75 leading-relaxed">
                 <p>1. Tap the <strong className="text-white inline-flex items-center gap-1"><Share className="w-3.5 h-3.5 inline" /> Share</strong> button in Safari&apos;s bottom toolbar.</p>
                 <p>2. Scroll down and select <strong className="text-white">Add to Home Screen</strong>.</p>
-                <p>3. Tap <strong className="text-white">Add</strong> to launch Kinetix full-screen without browser bars.</p>
+                <p>3. Tap <strong className="text-white">Add</strong> to launch Gym Freak full-screen without browser bars.</p>
               </div>
             ) : (
               <div className="space-y-2.5 text-xs text-white/75 leading-relaxed">
                 <p>1. Open your browser menu (<strong className="text-white">⋮</strong> in Chrome or Edge).</p>
                 <p>2. Tap <strong className="text-white">Install app</strong> or <strong className="text-white">Add to Home screen</strong>.</p>
-                <p>3. Launch Kinetix directly from your home screen in standalone mode.</p>
+                <p>3. Launch Gym Freak directly from your home screen in standalone mode.</p>
               </div>
             )}
 

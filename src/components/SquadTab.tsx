@@ -188,9 +188,10 @@ export function SquadTab({
     (activeUser.dailyLog.workoutCompleted ? 1 : 0);
   const totalCircleCount = squadMembers.length + 1;
 
-  const inspectedFriend = selectedFriendId
-    ? allUsers.find((u) => u.id === selectedFriendId) ?? null
-    : null;
+  const inspectedFriend =
+    selectedFriendId && activeUser.squadIds.includes(selectedFriendId)
+      ? allUsers.find((u) => u.id === selectedFriendId) ?? null
+      : null;
 
   const getTodaySplitBadge = (athlete: UserProfile) => {
     const dayObj = athlete.split[todayIdx] ?? athlete.split[0];
@@ -281,8 +282,12 @@ export function SquadTab({
                 return (
                   <div
                     key={candidate.id}
-                    onClick={() => setSelectedFriendId(candidate.id)}
-                    className="p-2.5 rounded-2xl bg-[#1A1D28]/90 border border-white/[0.08] hover:border-white/20 flex items-center justify-between gap-2.5 cursor-pointer transition-colors"
+                    onClick={() => {
+                      if (isAdded) setSelectedFriendId(candidate.id);
+                    }}
+                    className={`p-2.5 rounded-2xl bg-[#1A1D28]/90 border border-white/[0.08] flex items-center justify-between gap-2.5 transition-colors ${
+                      isAdded ? 'hover:border-white/20 cursor-pointer' : ''
+                    }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <AthleteAvatar
@@ -292,29 +297,45 @@ export function SquadTab({
                         sizeClass="w-9 h-9"
                       />
                       <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <p className="text-xs font-bold text-white truncate">{candidate.name}</p>
                           <span
                             className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap"
-                            style={
-                              candidate.dailyLog.workoutCompleted
-                                ? { backgroundColor: cTheme.softBg, color: cTheme.secondary }
-                                : { backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.65)' }
-                            }
+                            style={{ backgroundColor: cTheme.softBg, color: cTheme.secondary }}
                           >
-                            {candidate.dailyLog.workoutCompleted ? 'Crushed It' : 'In Progress'}
+                            {candidate.gender === 'female' ? 'Female' : 'Male'}
                           </span>
+                          {isAdded && (
+                            <span
+                              className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap"
+                              style={
+                                candidate.dailyLog.workoutCompleted
+                                  ? { backgroundColor: cTheme.softBg, color: cTheme.secondary }
+                                  : { backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.65)' }
+                              }
+                            >
+                              {candidate.dailyLog.workoutCompleted ? 'Crushed It' : 'In Progress'}
+                            </span>
+                          )}
                         </div>
-                        <p className="text-[10px] text-white/55 truncate mt-0.5">
-                          <span style={{ color: cTheme.secondary }}>
-                            {getShortGoalLabel(candidate.goal)}
-                          </span>{' '}
-                          · {getTodaySplitBadge(candidate)}
-                        </p>
-                        <p className="text-[10px] text-white/45 truncate font-mono-tabular">
-                          {candidate.dailyLog.waterMl}ml · {candidate.dailyLog.steps.toLocaleString()} steps ·{' '}
-                          {candidate.dailyLog.sleepHours.toFixed(1)}h sleep
-                        </p>
+                        {isAdded ? (
+                          <>
+                            <p className="text-[10px] text-white/55 truncate mt-0.5">
+                              <span style={{ color: cTheme.secondary }}>
+                                {getShortGoalLabel(candidate.goal)}
+                              </span>{' '}
+                              · {getTodaySplitBadge(candidate)}
+                            </p>
+                            <p className="text-[10px] text-white/45 truncate font-mono-tabular">
+                              {candidate.dailyLog.waterMl}ml · {candidate.dailyLog.steps.toLocaleString()} steps ·{' '}
+                              {candidate.dailyLog.sleepHours.toFixed(1)}h sleep
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-[10px] text-white/50 truncate mt-0.5">
+                            Add as a friend to view workout progress
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -346,7 +367,7 @@ export function SquadTab({
                       ) : (
                         <>
                           <UserPlus className="w-3.5 h-3.5" />
-                          <span>+ Add to Squad</span>
+                          <span>+ Add Friend</span>
                         </>
                       )}
                     </button>
@@ -399,8 +420,7 @@ export function SquadTab({
                 return (
                   <div
                     key={candidate.id}
-                    onClick={() => setSelectedFriendId(candidate.id)}
-                    className="p-2.5 rounded-2xl bg-[#1A1D28]/90 border border-white/[0.08] hover:border-white/20 flex items-center justify-between gap-2.5 cursor-pointer transition-colors"
+                    className="p-2.5 rounded-2xl bg-[#1A1D28]/90 border border-white/[0.08] flex items-center justify-between gap-2.5"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <AthleteAvatar
@@ -414,24 +434,13 @@ export function SquadTab({
                           <p className="text-xs font-bold text-white truncate">{candidate.name}</p>
                           <span
                             className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap"
-                            style={
-                              candidate.dailyLog.workoutCompleted
-                                ? { backgroundColor: cTheme.softBg, color: cTheme.secondary }
-                                : { backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.65)' }
-                            }
+                            style={{ backgroundColor: cTheme.softBg, color: cTheme.secondary }}
                           >
-                            {candidate.dailyLog.workoutCompleted ? 'Crushed It' : 'In Progress'}
+                            {candidate.gender === 'female' ? 'Female' : 'Male'}
                           </span>
                         </div>
-                        <p className="text-[10px] text-white/55 truncate mt-0.5">
-                          <span style={{ color: cTheme.secondary }}>
-                            {getShortGoalLabel(candidate.goal)}
-                          </span>{' '}
-                          · {getTodaySplitBadge(candidate)}
-                        </p>
-                        <p className="text-[10px] text-white/45 truncate font-mono-tabular">
-                          {candidate.dailyLog.waterMl}ml · {candidate.dailyLog.steps.toLocaleString()} steps ·{' '}
-                          {candidate.dailyLog.sleepHours.toFixed(1)}h sleep
+                        <p className="text-[10px] text-white/50 truncate mt-0.5">
+                          Add as a friend to view workout progress
                         </p>
                       </div>
                     </div>
@@ -446,7 +455,7 @@ export function SquadTab({
                       style={{ background: theme.gradientCss }}
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>Add</span>
+                      <span>+ Add Friend</span>
                     </button>
                   </div>
                 );

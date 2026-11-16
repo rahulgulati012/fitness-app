@@ -4,6 +4,7 @@ import type { ThemeTokens, UserProfile } from '../types/kinetix';
 import type { SupabaseConnectionStatus } from '../services/supabaseSync';
 import { getShortGoalLabel } from '../services/theme';
 import { AthleteAvatar } from './AthleteAvatar';
+import { GymFreakLogo } from './GymFreakLogo';
 
 interface TopBarProps {
   activeUser: UserProfile;
@@ -28,18 +29,26 @@ export function TopBar({
     <>
       <header className="sticky top-0 z-40 px-4 py-2.5 bg-[#090A0F]/85 backdrop-blur-xl border-b border-white/[0.06]">
         <div className="flex items-center justify-between gap-2">
-          {/* Left: Avatar + Greeting + Cloud Synced Pill + Goal Tag */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            <AthleteAvatar
-              name={activeUser.name}
-              avatarUrl={activeUser.avatarUrl}
-              gender={activeUser.gender}
-              sizeClass="w-9 h-9"
-            />
+          {/* Left: Gym Freak Barbell Logo + Greeting + Cloud Synced Pill + Goal Tag */}
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="relative shrink-0">
+              <GymFreakLogo className="w-9 h-9" />
+              <div className="absolute -bottom-1 -right-1 ring-2 ring-[#090A0F] rounded-full">
+                <AthleteAvatar
+                  name={activeUser.name}
+                  avatarUrl={activeUser.avatarUrl}
+                  gender={activeUser.gender}
+                  sizeClass="w-4 h-4"
+                />
+              </div>
+            </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                <span className="text-sm font-bold text-white truncate">
-                  Hey, {firstName}
+                <span className="text-xs font-extrabold tracking-tight text-white uppercase whitespace-nowrap">
+                  Gym Freak
+                </span>
+                <span className="text-[11px] font-medium text-white/60 truncate">
+                  · {firstName}
                 </span>
                 <button
                   type="button"

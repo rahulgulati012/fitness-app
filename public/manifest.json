@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Kinetix Fitness",
-  "short_name": "Kinetix",
+  "name": "Gym Freak",
+  "short_name": "Gym Freak",
   "description": "Precision physique engineering, adaptive training splits, bio-recovery telemetry, and squad accountability.",
   "start_url": "/",
   "scope": "/",
@@ -11,6 +11,12 @@
   "theme_color": "#090A0F",
   "categories": ["fitness", "health", "lifestyle"],
   "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/pwa-192x192.png",
       "sizes": "192x192",

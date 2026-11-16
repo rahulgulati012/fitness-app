@@ -40,18 +40,18 @@ export const FEMALE_GOALS: {
 }[] = [
   {
     title: 'Hourglass & Glute Sculpt',
-    subtitle: 'Upper/lower glutes, side delts for waist illusion & TVA vacuum core.',
-    focus: 'Zero bulky oblique work · Peak-pause hip thrusts & lateral delt caps',
+    subtitle: '5-day Upper/Lower split biased toward glute hypertrophy, hamstrings & TVA vacuum.',
+    focus: 'Hip thrusts, RDLs & Bulgarians · Back & shoulder upper toning',
   },
   {
     title: 'Athletic & Toned',
-    subtitle: 'Lean metabolic conditioning and functional sculpting without bulk.',
-    focus: 'High-density compound sets · Crisp upper/lower symmetry',
+    subtitle: '5-day Upper/Lower strength & posterior power with back/shoulder definition.',
+    focus: 'Progressive overload compounds · Glutes, hamstrings & TVA core stability',
   },
   {
     title: 'Lean & Petite Sculpt',
-    subtitle: 'Calorie-torching circuits, posture alignment & daily step emphasis.',
-    focus: '10.5k step floor · Deep core cinching & metabolic intervals',
+    subtitle: '5-day Upper/Lower high-rep glute sculpting, posture alignment & daily steps.',
+    focus: '10.5k step floor · Glute/hamstring toning & stomach vacuum core',
   },
 ];
 
@@ -62,18 +62,18 @@ export const MALE_GOALS: {
 }[] = [
   {
     title: 'V-Taper Aesthetic',
-    subtitle: 'Wide lats, capped 3D side delts, upper chest shelf & tight waist ratio.',
-    focus: 'Clavicular press · Iliac lat sweeps & behind-back cable laterals',
+    subtitle: '6-day Push/Pull/Legs split targeting wide lats, upper chest & 3D shoulder caps.',
+    focus: 'Incline DB press, weighted pull-ups & TVA stomach vacuum waist control',
   },
   {
     title: 'Hypertrophy & Mass',
-    subtitle: 'Progressive overload compound lifts, mechanical tension & dense volume.',
-    focus: 'Controlled eccentrics · High-output barbell & machine progression',
+    subtitle: '6-day Push/Pull/Legs progressive overload compounds & dense mechanical tension.',
+    focus: 'Barbell squats, RDLs, incline presses & controlled progressive overload',
   },
   {
     title: 'Athletic Shred',
-    subtitle: 'Explosive strength paired with high-output conditioning & core definition.',
-    focus: '10.5k step floor · Power complexes & metabolic density',
+    subtitle: '6-day Push/Pull/Legs explosive strength paired with conditioning & core shred.',
+    focus: '10.5k step floor · PPL compounds, metabolic finishers & TVA bracing',
   },
 ];
 
@@ -382,7 +382,7 @@ function createSeedUsers(): UserProfile[] {
         {
           id: 'n-m1',
           title: 'Session Logged',
-          body: 'Day 1 Upper Chest & Wide Lats banked. Streak extended to 11 days.',
+          body: 'Push A: Upper Chest & Capped Delts banked. Streak extended to 11 days.',
           timestamp: '4h ago',
           read: false,
           category: 'workout',

@@ -126,6 +126,7 @@ export interface BlueprintGenerationInput {
   schedule: BioSchedule;
   variationSeed?: number;
   previousSplit?: WorkoutDay[];
+  customInstruction?: string;
 }
 
 export async function generateAthleteBlueprint(
@@ -136,11 +137,13 @@ export async function generateAthleteBlueprint(
   source: 'gemini-2.5-flash' | 'kinetix-engine';
 }> {
   const seed = input.variationSeed ?? 0;
+  const customInstruction = input.customInstruction?.trim() || undefined;
   const deterministicSplit = buildVariedSplit(
     input.gender,
     input.goal,
     input.metrics.weightKg,
-    seed
+    seed,
+    customInstruction
   );
   const avoidExercises = (input.previousSplit ?? [])
     .flatMap((d) => d.exercises.map((e) => e.name))
@@ -161,6 +164,7 @@ export async function generateAthleteBlueprint(
         schedule: input.schedule,
         variationSeed: seed,
         avoidExercises,
+        customInstruction,
       }),
       signal: controller.signal,
     });

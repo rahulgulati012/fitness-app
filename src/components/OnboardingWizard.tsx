@@ -123,7 +123,7 @@ export function OnboardingWizard({
     const cleanName = name.trim() || 'Athlete';
     const cleanEmail =
       email.trim() ||
-      `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '')}@kinetix.fit`;
+      `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '')}@gymfreak.fit`;
 
     setSignupError(null);
     setIsGenerating(true);
@@ -233,7 +233,7 @@ export function OnboardingWizard({
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="athlete@kinetix.fit"
+                    placeholder="athlete@gymfreak.fit"
                     autoComplete="email"
                     className="w-full min-h-[46px] px-4 bg-[#1A1D28] border border-white/10 rounded-2xl text-sm text-white placeholder:text-white/35 focus:outline-none focus:border-white/30"
                   />

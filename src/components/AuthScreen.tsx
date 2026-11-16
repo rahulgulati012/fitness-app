@@ -1,19 +1,18 @@
 import { useState, type FormEvent } from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, Database, Lock, Mail, UserPlus } from 'lucide-react';
+import { ArrowRight, Lock, Mail, UserPlus } from 'lucide-react';
 import { UNIVERSAL_THEME } from '../services/theme';
+import { GymFreakLogo } from './GymFreakLogo';
 import { PWAInstallButton } from './PWAInstallButton';
 
 interface AuthScreenProps {
   onEmailSignIn: (email: string, password: string) => Promise<string | undefined>;
   onStartOnboarding: (prefill?: { email?: string; password?: string }) => void;
-  onOpenCloudModal: () => void;
 }
 
 export function AuthScreen({
   onEmailSignIn,
   onStartOnboarding,
-  onOpenCloudModal,
 }: AuthScreenProps) {
   const [mode, setMode] = useState<'signin' | 'create'>('signin');
   const [email, setEmail] = useState('');
@@ -36,7 +35,7 @@ export function AuthScreen({
     }
 
     if (!email.trim()) {
-      setError('Enter your athlete email or tap a profile chip above.');
+      setError('Enter your athlete email or create a new profile below.');
       return;
     }
 
@@ -58,7 +57,8 @@ export function AuthScreen({
         transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
         className="absolute -top-28 left-1/2 -translate-x-1/2 w-[360px] h-[360px] rounded-full blur-[95px] pointer-events-none"
         style={{
-          background: 'radial-gradient(circle, rgba(255,46,99,0.45) 0%, rgba(255,140,66,0.22) 60%, transparent 100%)',
+          background:
+            'radial-gradient(circle, rgba(255,46,99,0.45) 0%, rgba(255,140,66,0.22) 60%, transparent 100%)',
         }}
       />
 
@@ -66,29 +66,14 @@ export function AuthScreen({
         {/* Hero Header */}
         <div className="flex flex-col items-center text-center pt-2">
           <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 border border-white/15"
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 p-1"
             style={{
-              background: 'linear-gradient(135deg, rgba(255,46,99,0.2) 0%, rgba(255,140,66,0.2) 100%)',
-              boxShadow: `0 0 32px ${theme.glow}`,
+              boxShadow: `0 0 36px ${theme.glow}`,
             }}
           >
-            <svg viewBox="0 0 32 32" className="w-8 h-8" fill="none" aria-hidden="true">
-              <defs>
-                <linearGradient id="kinetix-mark" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#FF2E63" />
-                  <stop offset="100%" stopColor="#FF8C42" />
-                </linearGradient>
-              </defs>
-              <path
-                d="M7 5V27M13 16L24 5M13 16L25 27"
-                stroke="url(#kinetix-mark)"
-                strokeWidth="3.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <GymFreakLogo className="w-14 h-14" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">KINETIX</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white">GYM FREAK</h1>
           <p className="text-sm text-white/75 mt-1.5 font-medium max-w-[280px] text-balance">
             Sculpted By Science. Driven By You.
           </p>
@@ -134,7 +119,7 @@ export function AuthScreen({
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={mode === 'signin' ? 'elena@kinetix.fit' : 'athlete@domain.com'}
+                placeholder={mode === 'signin' ? 'athlete@gymfreak.fit' : 'athlete@domain.com'}
                 autoComplete="email"
                 className="w-full min-h-[46px] pl-10 pr-4 bg-[#1A1D28] border border-white/10 rounded-2xl text-sm text-white placeholder:text-white/35 focus:outline-none focus:border-rose-500/60"
               />
@@ -152,9 +137,7 @@ export function AuthScreen({
               />
             </div>
 
-            {error && (
-              <p className="text-xs text-rose-400 leading-relaxed px-1">{error}</p>
-            )}
+            {error && <p className="text-xs text-rose-400 leading-relaxed px-1">{error}</p>}
 
             <button
               type="submit"
@@ -189,17 +172,9 @@ export function AuthScreen({
         </section>
       </div>
 
-      {/* Footer PWA Install + Cloud Setup */}
+      {/* Footer PWA Install */}
       <div className="relative z-10 pt-6 flex flex-col items-center gap-2.5">
         <PWAInstallButton theme={theme} compact />
-        <button
-          type="button"
-          onClick={onOpenCloudModal}
-          className="min-h-[40px] px-4 rounded-2xl text-xs font-medium text-white/55 hover:text-white flex items-center gap-2 transition-colors"
-        >
-          <Database className="w-3.5 h-3.5" />
-          <span>Cloud & Supabase Setup</span>
-        </button>
       </div>
     </div>
   );

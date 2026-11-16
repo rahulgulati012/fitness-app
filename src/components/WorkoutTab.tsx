@@ -13,11 +13,20 @@ import {
   Trophy,
 } from 'lucide-react';
 import type { ThemeTokens, UserProfile } from '../types/kinetix';
+import {
+  formatRestCountdown,
+  type GlobalRestTimerState,
+} from './FloatingRestTimer';
 
 interface WorkoutTabProps {
   user: UserProfile;
   theme: ThemeTokens;
   selectedDayIndex: number;
+  restTimer: GlobalRestTimerState;
+  onStartRestTimer: (durationSeconds: number, exerciseName?: string) => void;
+  onToggleRestTimer: () => void;
+  onAdjustRestTimer: (deltaSeconds: number) => void;
+  onResetRestTimer: (durationSeconds?: number) => void;
   onSelectDay: (dayIndex: number) => void;
   onToggleWarmupDrill: (dayIndex: number, drillId: string) => void;
   onUpdateSet: (
@@ -29,31 +38,15 @@ interface WorkoutTabProps {
   onFinishWorkout: (dayIndex: number) => void;
 }
 
-function playTimerChime() {
-  try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(660, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.14);
-    gain.gain.setValueAtTime(0.08, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.36);
-  } catch {
-    // Ignore audio context restrictions
-  }
-}
-
 export function WorkoutTab({
   user,
   theme,
   selectedDayIndex,
+  restTimer,
+  onStartRestTimer,
+  onToggleRestTimer,
+  onAdjustRestTimer,
+  onResetRestTimer,
   onSelectDay,
   onToggleWarmupDrill,
   onUpdateSet,
@@ -62,10 +55,6 @@ export function WorkoutTab({
   const currentDay = user.split[selectedDayIndex] ?? user.split[0];
 
   const [warmupExpanded, setWarmupExpanded] = useState(true);
-  const [restDuration, setRestDuration] = useState(90);
-  const [secondsLeft, setSecondsLeft] = useState(90);
-  const [timerRunning, setTimerRunning] = useState(false);
-  const [timerExpiredPulse, setTimerExpiredPulse] = useState(false);
   const [celebrationOpen, setCelebrationOpen] = useState(false);
 
   const prevWarmupCompleteRef = useRef(false);
@@ -87,30 +76,6 @@ export function WorkoutTab({
     }
   }, [allWarmupsDone, selectedDayIndex]);
 
-  // Countdown rest timer loop
-  useEffect(() => {
-    if (!timerRunning) return;
-    const interval = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          setTimerRunning(false);
-          setTimerExpiredPulse(true);
-          playTimerChime();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [timerRunning]);
-
-  const startRestTimer = (durationSec: number) => {
-    setRestDuration(durationSec);
-    setSecondsLeft(durationSec);
-    setTimerExpiredPulse(false);
-    setTimerRunning(true);
-  };
-
   // Overall completion percentage
   const totalSets = currentDay.exercises.reduce((sum, ex) => sum + ex.sets.length, 0);
   const completedSets = currentDay.exercises.reduce(
@@ -121,11 +86,9 @@ export function WorkoutTab({
   const completedUnits = warmupDone + completedSets;
   const completionPct = totalUnits > 0 ? Math.round((completedUnits / totalUnits) * 100) : 0;
 
-  const formatTimer = (sec: number) => {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m}:${String(s).padStart(2, '0')}`;
-  };
+  const timerDisplay = restTimer.active ? restTimer.secondsLeft : 90;
+  const timerCompleted = restTimer.active && restTimer.completed;
+  const timerRunning = restTimer.active && restTimer.running;
 
   const handleFinish = () => {
     onFinishWorkout(currentDay.dayIndex);
@@ -133,7 +96,7 @@ export function WorkoutTab({
   };
 
   return (
-    <div className="pb-36 space-y-4">
+    <div className="pb-44 space-y-4">
       {/* 1. Horizontal 7-Day Split Selector (Gender-Filtered) */}
       <div className="px-4 pt-3 space-y-2">
         <div className="flex items-center justify-between text-[11px]">
@@ -187,10 +150,10 @@ export function WorkoutTab({
       <div className="sticky top-[57px] z-30 px-4">
         <div
           className={`bg-[#12141C]/95 backdrop-blur-xl border rounded-2xl p-3.5 shadow-xl space-y-2.5 transition-all ${
-            timerExpiredPulse ? 'border-amber-400' : 'border-white/10'
+            timerCompleted ? 'border-amber-400' : 'border-white/10'
           }`}
           style={
-            timerExpiredPulse
+            timerCompleted
               ? { boxShadow: `0 0 24px ${theme.glow}` }
               : undefined
           }
@@ -216,25 +179,24 @@ export function WorkoutTab({
               <div className="px-2.5 py-1.5 rounded-xl bg-[#1A1D28] border border-white/10 flex items-center gap-1.5">
                 <Timer
                   className="w-3.5 h-3.5"
-                  style={{ color: timerExpiredPulse ? '#EAB308' : theme.secondary }}
+                  style={{ color: timerCompleted ? '#EAB308' : theme.secondary }}
                 />
                 <span
                   className={`text-xs font-bold font-mono-tabular ${
-                    timerExpiredPulse ? 'text-amber-300' : 'text-white'
+                    timerCompleted ? 'text-amber-300' : 'text-white'
                   }`}
                 >
-                  {timerExpiredPulse ? 'GO!' : formatTimer(secondsLeft)}
+                  {timerCompleted ? 'GO!' : formatRestCountdown(timerDisplay)}
                 </span>
               </div>
 
               <button
                 type="button"
                 onClick={() => {
-                  if (secondsLeft === 0) {
-                    startRestTimer(restDuration);
+                  if (!restTimer.active || restTimer.secondsLeft === 0) {
+                    onStartRestTimer(restTimer.totalSeconds || 90, currentDay.title);
                   } else {
-                    setTimerExpiredPulse(false);
-                    setTimerRunning((r) => !r);
+                    onToggleRestTimer();
                   }
                 }}
                 aria-label={timerRunning ? 'Pause rest timer' : 'Start rest timer'}
@@ -247,8 +209,11 @@ export function WorkoutTab({
               <button
                 type="button"
                 onClick={() => {
-                  setTimerExpiredPulse(false);
-                  setSecondsLeft((s) => s + 15);
+                  if (!restTimer.active) {
+                    onStartRestTimer(105, currentDay.title);
+                  } else {
+                    onAdjustRestTimer(15);
+                  }
                 }}
                 className="min-h-[36px] px-2 rounded-xl bg-[#1A1D28] border border-white/10 text-[11px] font-semibold font-mono-tabular text-white/80 hover:text-white"
               >
@@ -262,12 +227,12 @@ export function WorkoutTab({
             <span className="text-[10px] text-white/50">Rest Preset</span>
             <div className="flex items-center gap-1.5">
               {[60, 90, 120].map((sec) => {
-                const isSelected = restDuration === sec;
+                const isSelected = restTimer.totalSeconds === sec;
                 return (
                   <button
                     key={sec}
                     type="button"
-                    onClick={() => startRestTimer(sec)}
+                    onClick={() => onStartRestTimer(sec, currentDay.title)}
                     className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold font-mono-tabular transition-colors ${
                       isSelected
                         ? 'text-white border border-white/20 bg-white/10'
@@ -280,11 +245,7 @@ export function WorkoutTab({
               })}
               <button
                 type="button"
-                onClick={() => {
-                  setTimerRunning(false);
-                  setTimerExpiredPulse(false);
-                  setSecondsLeft(restDuration);
-                }}
+                onClick={() => onResetRestTimer(restTimer.totalSeconds || 90)}
                 aria-label="Reset rest timer"
                 className="p-1 rounded-lg text-white/45 hover:text-white"
               >
@@ -473,7 +434,7 @@ export function WorkoutTab({
                         completed: nextDone,
                       });
                       if (nextDone) {
-                        startRestTimer(exercise.restSeconds || 90);
+                        onStartRestTimer(exercise.restSeconds || 90, exercise.name);
                       }
                     }}
                     aria-label={`Mark set ${setRow.setNumber} complete`}

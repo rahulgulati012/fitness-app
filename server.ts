@@ -15,6 +15,7 @@ interface BlueprintRequest {
   goal: string;
   variationSeed?: number;
   avoidExercises?: string[];
+  customInstruction?: string;
   metrics: {
     heightCm: number;
     weightKg: number;
@@ -72,7 +73,7 @@ const blueprintSchema = {
           exercises: {
             type: Type.ARRAY,
             description:
-              "For training days (isRestDay: false), return STRICTLY 6 distinct, properly sequenced exercises (2 primary compounds, 2 secondary hypertrophy movements, 2 targeted isolation/finisher movements). For recovery days (isRestDay: true), return 1-2 gentle recovery activities.",
+              "For training days (isRestDay: false), return STRICTLY 6 distinct, properly sequenced exercises (2 primary compounds, 2 secondary hypertrophy movements, 2 targeted isolation/finisher movements). Each exercise cue MUST include a clear progressive overload instruction (e.g., 'Increase weight by 2.5kg when you hit max reps'). For recovery days (isRestDay: true), return 1-2 gentle recovery/TVA activities.",
             items: {
               type: Type.OBJECT,
               properties: {
@@ -140,15 +141,39 @@ async function startServer() {
       return;
     }
 
-    const firstName = body.name.trim().split(/\s+/)[0] || body.name.trim();
     const seed = body.variationSeed ?? 0;
     const avoidClause =
       Array.isArray(body.avoidExercises) && body.avoidExercises.length > 0
-        ? `\n6. IMPORTANT REGENERATION RULE (Variation #${seed}): Pick fresh exercise variations and different warm-up drills; avoid repeating these previous primary exercises: ${body.avoidExercises.slice(0, 14).join(", ")}.`
+        ? `\n7. IMPORTANT REGENERATION RULE (Variation #${seed}): Pick fresh exercise variations and different warm-up drills; avoid repeating these previous primary exercises: ${body.avoidExercises.slice(0, 14).join(", ")}.`
+        : "";
+    const customRequest =
+      typeof body.customInstruction === "string" && body.customInstruction.trim()
+        ? `\n8. ATHLETE CUSTOM TRAINING PREFERENCE (STRICTLY HONOR THIS): "${body.customInstruction.trim().slice(0, 280)}" — adjust exercises, equipment selection, and volume emphasis accordingly while keeping the 6-exercise structure, TVA/Stomach Vacuum drills, and progressive overload cues.`
         : "";
 
-    const prompt = `Create a science-backed 7-day training split (Variation #${seed}) and 20 personalized motivational quotes for athlete "${firstName}".
-Profile:
+    const splitRule =
+      body.gender === "male"
+        ? `2. MALE 6-DAY PUSH/PULL/LEGS (PPL) SPLIT:
+   - Mon (dayIndex 0, isRestDay: false): Push A — upper chest density (Incline Dumbbell Press / Incline Barbell Press), shoulder capping (Overhead Press, Lateral Raises), triceps.
+   - Tue (dayIndex 1, isRestDay: false): Pull A — lat width (Weighted/Wide-Grip Pull-Ups, Lat Pulldown), upper/mid-back rows, rear delts, biceps.
+   - Wed (dayIndex 2, isRestDay: false): Legs A — Barbell Squats, Romanian Deadlifts (RDLs), leg curls/extensions, calves, core.
+   - Thu (dayIndex 3, isRestDay: false): Push B — shoulder capping (Overhead Press, Cable Lateral Raises), clavicular chest press, dips/flyes, triceps.
+   - Fri (dayIndex 4, isRestDay: false): Pull B — bent-over rows, neutral/iliac pulldowns, face pulls, rear delts, biceps.
+   - Sat (dayIndex 5, isRestDay: false): Legs B — RDLs / Trap Bar / Hack Squat, Bulgarian Split Squats, hamstring curls, calves, core.
+   - Sun (dayIndex 6, isRestDay: true): Active Recovery & TVA Mobility.
+   - Tailor exercise selection and intensity specifically to "${body.goal}".`
+        : `2. FEMALE 5-DAY UPPER/LOWER SPLIT:
+   - Mon (dayIndex 0, isRestDay: false): Lower A — heavily biased toward glute hypertrophy and hamstring development (Barbell Hip Thrusts, Romanian Deadlifts, Bulgarian Split Squats, Leg Curls, Hip Abductions).
+   - Tue (dayIndex 1, isRestDay: false): Upper A — focused on back width/posture and shoulder toning (Lat Pulldowns, Cable Rows, Shoulder Press, Lateral Raises, Face Pulls, Arms) WITHOUT excessive chest volume.
+   - Wed (dayIndex 2, isRestDay: true): Active Recovery & TVA Vacuum Mobility.
+   - Thu (dayIndex 3, isRestDay: false): Lower B — posterior chain & unilateral glutes (RDLs, Bulgarian Split Squats, 45-degree Glute Extensions, Leg Curls, Kickbacks).
+   - Fri (dayIndex 4, isRestDay: false): Upper B — upper back sculpt, rear delts, capped shoulders, and toned arms WITHOUT excessive chest volume.
+   - Sat (dayIndex 5, isRestDay: false): Lower C — Hip Thrusts, RDLs, Sumo Squats, Glute Pull-Throughs, Hip Abductions.
+   - Sun (dayIndex 6, isRestDay: true): Complete CNS Reset & Restorative Walk.
+   - Tailor exercise selection and rep cadence specifically to "${body.goal}".`;
+
+    const prompt = `Create an advanced, scientifically structured 7-day hypertrophy training split (Variation #${seed}) and 20 universal motivational quotes.
+Athlete Metrics & Goal:
 - Gender: ${body.gender}
 - Physique Goal: ${body.goal}
 - Height: ${body.metrics?.heightCm ?? 170} cm, Weight: ${body.metrics?.weightKg ?? 65} kg, Age: ${body.metrics?.age ?? 26}
@@ -156,17 +181,12 @@ Profile:
 - Motivation Vibe: ${body.schedule?.vibe ?? "Confident & Indulging"}
 
 Rules:
-1. Return exactly 7 days in "split" ordered dayIndex 0 (Mon) through 6 (Sun) with dayLabel "Mon".."Sun". Include 5 training days (isRestDay: false) + 2 active recovery days (Thu & Sun with isRestDay: true).
-2. Make the split unmistakably distinct for "${body.gender}" + "${body.goal}":
-   - Female "Hourglass & Glute Sculpt": upper/lower glutes, side delts, TVA vacuum core (zero bulky obliques).
-   - Female "Athletic & Toned": lower power, upper symmetry, metabolic conditioning.
-   - Female "Lean & Petite Sculpt": calorie-torch circuits, posture alignment, high-rep tone, step floor.
-   - Male "V-Taper Aesthetic": clavicular upper chest shelf, wide lats, 3D side delts, tight waist.
-   - Male "Hypertrophy & Mass": heavy compound barbell/machine tension and dense volume.
-   - Male "Athletic Shred": explosive speed-strength paired with metabolic conditioning & core shred.
-3. STRICT REQUIREMENT: Every training day (isRestDay: false) MUST include 3-4 specific dynamic warmupDrills matching that day's target muscle AND STRICTLY 6 distinct, properly sequenced exercises (2 primary compounds, 2 secondary hypertrophy movements, 2 targeted isolation/finisher movements) with realistic starter weights in kg, coaching cues, tempo (e.g., "3-1-1-0"), and restSeconds (60, 90, or 120).
-4. Active recovery days should have isRestDay: true, 3 mobility warmupDrills, and 1-2 gentle walk/core recovery items.
-5. Return exactly 20 short, high-impact quotes in "quotes", each addressing "${firstName}" naturally in the "${body.schedule?.vibe ?? "Confident & Indulging"}" tone.${avoidClause}`;
+1. Return exactly 7 days in "split" ordered dayIndex 0 (Mon) through 6 (Sun) with dayLabel "Mon".."Sun".
+${splitRule}
+3. CORE & STABILITY (ALL USERS): Inject TVA (Transverse Abdominis) engagement work and Stomach Vacuum holds into the warmupDrills (e.g., "TVA Rib-Tuck & Stomach Vacuum Hold: 3 x 20s full-exhale holds") or core slot on EVERY day.
+4. PROGRESSIVE OVERLOAD CUES: Every exercise "cue" MUST include a clear progressive overload instruction (for example: "Increase weight by 2.5kg when you hit max reps") alongside crisp biomechanics.
+5. STRICT 6-EXERCISE RULE: Every training day (isRestDay: false) MUST include 3-4 specific warmupDrills AND STRICTLY 6 distinct, properly sequenced exercises (2 primary compounds, 2 secondary hypertrophy movements, 2 targeted isolation/finisher movements) with realistic starter weights in kg, tempo (e.g., "3-1-1-0"), and restSeconds (45, 60, 90, 120, or 150). Recovery days (isRestDay: true) have 3 mobility/TVA warmupDrills and 1-2 gentle walk/TVA activities.
+6. STRICT NAMING CONVENTION: All routine titles, exercise names, cues, warmups, and all 20 "quotes" MUST use standard, professional fitness terminology ONLY. NEVER include any personal names, nicknames, pet names, or personal identifiers so the output is 100% universal for any squad member. Match the "${body.schedule?.vibe ?? "Confident & Indulging"}" tone.${avoidClause}${customRequest}`;
 
     const modelsToTry = ["gemini-2.5-flash", "gemini-4-hydrogen"];
 
@@ -177,7 +197,7 @@ Rules:
           contents: prompt,
           config: {
             systemInstruction:
-              "You are KINETIX, an elite biomechanics and physique coach. Respond strictly with valid JSON matching the schema.",
+              "You are an elite strength, biomechanics, and hypertrophy coach. Respond strictly with valid JSON matching the schema. Never include personal identifiers or pet names.",
             responseMimeType: "application/json",
             responseSchema: blueprintSchema,
           },

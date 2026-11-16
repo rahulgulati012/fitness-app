@@ -36,7 +36,11 @@ import { WorkoutTab } from './components/WorkoutTab';
 import { ProgressTab } from './components/ProgressTab';
 import { SquadTab } from './components/SquadTab';
 import { ProfileTab } from './components/ProfileTab';
-import { CloudModal } from './components/CloudModal';
+import {
+  FloatingRestTimer,
+  playTimerChime,
+  type GlobalRestTimerState,
+} from './components/FloatingRestTimer';
 import { ToastOverlay } from './components/ToastOverlay';
 
 export default function App() {
@@ -51,7 +55,15 @@ export default function App() {
   const [selectedWorkoutDay, setSelectedWorkoutDay] = useState<number>(() =>
     getTodaySplitDayIndex()
   );
-  const [cloudModalOpen, setCloudModalOpen] = useState(false);
+  const [restTimer, setRestTimer] = useState<GlobalRestTimerState>({
+    active: false,
+    running: false,
+    exerciseName: 'Rest Period',
+    totalSeconds: 90,
+    secondsLeft: 90,
+    endTimeMs: null,
+    completed: false,
+  });
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
   const [supabaseErrorBanner, setSupabaseErrorBanner] = useState<string | null>(null);
@@ -70,6 +82,150 @@ export default function App() {
   useEffect(() => {
     applyThemeCssVars(theme);
   }, [theme]);
+
+  // Global timestamp-based Rest Timer ticker (persists across all tabs)
+  useEffect(() => {
+    if (!restTimer.active || !restTimer.running || !restTimer.endTimeMs) return;
+
+    const tick = () => {
+      setRestTimer((prev) => {
+        if (!prev.active || !prev.running || !prev.endTimeMs) return prev;
+        const remaining = Math.max(0, Math.ceil((prev.endTimeMs - Date.now()) / 1000));
+        if (remaining <= 0) {
+          playTimerChime();
+          if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+            try {
+              navigator.vibrate([200, 100, 200]);
+            } catch {
+              // Ignore vibration restrictions
+            }
+          }
+          return {
+            ...prev,
+            running: false,
+            secondsLeft: 0,
+            endTimeMs: null,
+            completed: true,
+          };
+        }
+        if (remaining === prev.secondsLeft) return prev;
+        return {
+          ...prev,
+          secondsLeft: remaining,
+        };
+      });
+    };
+
+    tick();
+    const interval = setInterval(tick, 250);
+    return () => clearInterval(interval);
+  }, [restTimer.active, restTimer.running, restTimer.endTimeMs]);
+
+  const startRestTimer = (durationSeconds: number, exerciseName = 'Active Rest') => {
+    const safeDuration = Math.max(15, Math.round(durationSeconds));
+    setRestTimer({
+      active: true,
+      running: true,
+      exerciseName,
+      totalSeconds: safeDuration,
+      secondsLeft: safeDuration,
+      endTimeMs: Date.now() + safeDuration * 1000,
+      completed: false,
+    });
+  };
+
+  const toggleRestTimer = () => {
+    setRestTimer((prev) => {
+      if (!prev.active) {
+        const dur = prev.totalSeconds || 90;
+        return {
+          ...prev,
+          active: true,
+          running: true,
+          secondsLeft: dur,
+          endTimeMs: Date.now() + dur * 1000,
+          completed: false,
+        };
+      }
+      if (prev.completed || prev.secondsLeft <= 0) {
+        const dur = prev.totalSeconds || 90;
+        return {
+          ...prev,
+          running: true,
+          secondsLeft: dur,
+          endTimeMs: Date.now() + dur * 1000,
+          completed: false,
+        };
+      }
+      if (prev.running) {
+        const remaining = prev.endTimeMs
+          ? Math.max(0, Math.ceil((prev.endTimeMs - Date.now()) / 1000))
+          : prev.secondsLeft;
+        return {
+          ...prev,
+          running: false,
+          secondsLeft: remaining,
+          endTimeMs: null,
+        };
+      }
+      const resumeSeconds = Math.max(1, prev.secondsLeft);
+      return {
+        ...prev,
+        running: true,
+        endTimeMs: Date.now() + resumeSeconds * 1000,
+        completed: false,
+      };
+    });
+  };
+
+  const adjustRestTimer = (deltaSeconds: number) => {
+    setRestTimer((prev) => {
+      if (!prev.active) return prev;
+      if (prev.running && prev.endTimeMs) {
+        const currentRemaining = Math.max(0, Math.ceil((prev.endTimeMs - Date.now()) / 1000));
+        const nextRemaining = Math.max(5, currentRemaining + deltaSeconds);
+        return {
+          ...prev,
+          totalSeconds: Math.max(prev.totalSeconds, nextRemaining),
+          secondsLeft: nextRemaining,
+          endTimeMs: Date.now() + nextRemaining * 1000,
+          completed: false,
+        };
+      }
+      const nextRemaining = Math.max(5, prev.secondsLeft + deltaSeconds);
+      return {
+        ...prev,
+        totalSeconds: Math.max(prev.totalSeconds, nextRemaining),
+        secondsLeft: nextRemaining,
+        completed: false,
+      };
+    });
+  };
+
+  const resetRestTimer = (durationSeconds?: number) => {
+    setRestTimer((prev) => {
+      const target = Math.max(15, Math.round(durationSeconds ?? prev.totalSeconds ?? 90));
+      return {
+        ...prev,
+        active: true,
+        running: false,
+        totalSeconds: target,
+        secondsLeft: target,
+        endTimeMs: null,
+        completed: false,
+      };
+    });
+  };
+
+  const dismissRestTimer = () => {
+    setRestTimer((prev) => ({
+      ...prev,
+      active: false,
+      running: false,
+      endTimeMs: null,
+      completed: false,
+    }));
+  };
 
   // Boot session restoration & real-time Supabase onAuthStateChange listener
   useEffect(() => {
@@ -311,8 +467,26 @@ export default function App() {
 
   const handleSignOut = () => {
     void signOutFromSupabase();
+    dismissRestTimer();
     setActiveUser(null);
     setViewMode('auth');
+  };
+
+  const handleToggleSquadMember = async (friendId: string) => {
+    if (!activeUser) return;
+    const res = db.toggleSquadMember(activeUser.id, friendId);
+    syncUsers(res.user);
+    pushToast({
+      title: res.added ? 'Friend Added' : 'Removed from Squad',
+      body: res.added
+        ? `${res.friendName} is now in your Squad circle.`
+        : `${res.friendName} was removed from your Squad list.`,
+      category: 'info',
+    });
+    if (res.user) {
+      const writeRes = await syncProfileToSupabase(res.user);
+      trackWriteResult(writeRes, 'squad circle');
+    }
   };
 
   const handleTestReminder = async (kind: 'workout' | 'hydration' | 'bedtime') => {
@@ -325,13 +499,13 @@ export default function App() {
     let body = '';
 
     if (kind === 'workout') {
-      title = `KINETIX · ${activeUser.schedule.workoutTime} Session Alert`;
+      title = `Gym Freak · ${activeUser.schedule.workoutTime} Session Alert`;
       body = `${first}, it's time for ${todaySplit.title}. ${activeUser.quotes[0] ?? ''}`;
     } else if (kind === 'hydration') {
-      title = 'KINETIX · Hydration & Step Ping';
+      title = 'Gym Freak · Hydration & Step Ping';
       body = `Drink 300ml water and take 1,000 steps right now, ${first}.`;
     } else {
-      title = 'KINETIX · Bedtime Wind-Down';
+      title = 'Gym Freak · Bedtime Wind-Down';
       body = `Recovery builds the physique, ${first}. ${sleepTarget.toFixed(1)} hours starts soon.`;
     }
 
@@ -421,7 +595,6 @@ export default function App() {
               <AuthScreen
                 onEmailSignIn={handleEmailSignIn}
                 onStartOnboarding={handleStartOnboarding}
-                onOpenCloudModal={() => setCloudModalOpen(true)}
               />
             )}
 
@@ -450,7 +623,7 @@ export default function App() {
               }}
             />
 
-            <main>
+            <main className={restTimer.active ? 'pb-16' : ''}>
               {activeTab === 'home' && (
                 <DashboardTab
                   user={activeUser}
@@ -500,6 +673,11 @@ export default function App() {
                   user={activeUser}
                   theme={theme}
                   selectedDayIndex={selectedWorkoutDay}
+                  restTimer={restTimer}
+                  onStartRestTimer={startRestTimer}
+                  onToggleRestTimer={toggleRestTimer}
+                  onAdjustRestTimer={adjustRestTimer}
+                  onResetRestTimer={resetRestTimer}
                   onSelectDay={async (dayIdx) => {
                     setSelectedWorkoutDay(dayIdx);
                     const updated = db.updateUser(activeUser.id, (u) => ({
@@ -589,21 +767,7 @@ export default function App() {
                     const merged = db.mergeRemoteUsers(remoteUsers);
                     setUsers(merged);
                   }}
-                  onToggleSquadMember={async (friendId) => {
-                    const res = db.toggleSquadMember(activeUser.id, friendId);
-                    syncUsers(res.user);
-                    pushToast({
-                      title: res.added ? 'Added to Squad' : 'Removed from Squad',
-                      body: res.added
-                        ? `${res.friendName} is now in your personal Squad circle.`
-                        : `${res.friendName} was removed from your Squad list.`,
-                      category: 'info',
-                    });
-                    if (res.user) {
-                      const writeRes = await syncProfileToSupabase(res.user);
-                      trackWriteResult(writeRes, 'squad circle');
-                    }
-                  }}
+                  onToggleSquadMember={handleToggleSquadMember}
                   onSendHype={(targetId) => {
                     const res = db.sendHype(activeUser.id, targetId);
                     setUsers(res.users);
@@ -623,6 +787,7 @@ export default function App() {
                 <ProfileTab
                   key={activeUser.id}
                   user={activeUser}
+                  allUsers={users}
                   theme={theme}
                   onUpdateProfileAndPlan={async (patch) => {
                     const updated = db.updateUser(activeUser.id, (u) => ({
@@ -659,22 +824,24 @@ export default function App() {
                     }
                   }}
                   onTestReminder={handleTestReminder}
-                  onOpenCloudModal={() => setCloudModalOpen(true)}
-                  onSignOut={handleSignOut}
-                  onResetDemoData={() => {
-                    const reset = db.resetDemoData();
-                    setUsers(reset.users);
-                    setActiveUser(null);
-                    setViewMode('auth');
-                    pushToast({
-                      title: 'Demo Profiles Restored',
-                      body: 'All squad profiles and logs reset to clean baseline.',
-                      category: 'info',
-                    });
+                  onToggleSquadMember={handleToggleSquadMember}
+                  onSyncRemoteUsers={(remoteUsers) => {
+                    const merged = db.mergeRemoteUsers(remoteUsers);
+                    setUsers(merged);
                   }}
+                  onSupabaseError={(err) => setSupabaseErrorBanner(err)}
+                  onSignOut={handleSignOut}
                 />
               )}
             </main>
+
+            <FloatingRestTimer
+              timer={restTimer}
+              theme={theme}
+              onTogglePause={toggleRestTimer}
+              onAdjustSeconds={adjustRestTimer}
+              onDismiss={dismissRestTimer}
+            />
 
             <BottomNav
               activeTab={activeTab}
@@ -685,12 +852,6 @@ export default function App() {
         )}
           </>
         )}
-
-        <CloudModal
-          isOpen={cloudModalOpen}
-          onClose={() => setCloudModalOpen(false)}
-          theme={theme}
-        />
       </div>
     </div>
   );

@@ -1,8 +1,9 @@
-const CACHE_NAME = 'kinetix-pwa-v2';
+const CACHE_NAME = 'gymfreak-pwa-v3';
 const CORE_SHELL = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/icon.svg',
   '/pwa-192x192.png',
   '/pwa-512x512.png',
   '/pwa-maskable-512x512.png',
@@ -54,7 +55,7 @@ self.addEventListener('fetch', (event) => {
 
 self.addEventListener('push', (event) => {
   let payload = {
-    title: 'Kinetix Fitness',
+    title: 'Gym Freak',
     body: 'Time to lock in your training and recovery protocol.',
   };
 
