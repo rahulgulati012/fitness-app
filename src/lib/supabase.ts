@@ -10,11 +10,3 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
     detectSessionInUrl: true,
   },
 });
-
-export function isSupabaseConfigured(): boolean {
-  return Boolean(supabase);
-}
-
-export function getSupabaseConfigDiagnostics(): string {
-  return 'Supabase client initialized (https://jjiiqxflepnsaybotsdx.supabase.co).';
-}

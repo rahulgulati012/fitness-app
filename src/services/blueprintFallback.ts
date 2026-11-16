@@ -198,65 +198,6 @@ export async function generateAthleteBlueprint(
     // Static hosts or offline: check optional Vite key or use rich multi-split engine
   }
 
-  // Optional static-host support if deployer sets VITE_GEMINI_API_KEY
-  try {
-    const viteKey =
-      (import.meta as unknown as { env?: Record<string, string | undefined> }).env
-        ?.VITE_GEMINI_API_KEY;
-    if (viteKey && viteKey !== 'MY_GEMINI_API_KEY' && viteKey.trim() !== '') {
-      const firstName = input.name.trim().split(/\s+/)[0] || input.name.trim();
-      const avoidLine =
-        avoidExercises.length > 0
-          ? ` Avoid repeating these previous exercises: ${avoidExercises.join(', ')}.`
-          : '';
-      const prompt = `Return ONLY valid JSON with keys "split" (7 objects dayIndex 0..6, dayLabel Mon..Sun, title, targetMuscle, durationMin, isRestDay, warmupTitle, warmupDrills[{name,prescription}], exercises[{name,muscle,cue,tempo,restSeconds,setsCount,targetReps,suggestedWeightKg}] — STRICTLY 6 distinct sequenced exercises on every non-rest day: 2 primary compounds, 2 secondary hypertrophy, 2 targeted isolation/finisher) and "quotes" (20 strings addressing ${firstName}). Profile: gender=${input.gender}, goal=${input.goal}, height=${input.metrics.heightCm}cm, weight=${input.metrics.weightKg}kg, age=${input.metrics.age}, variationSeed=${seed}.${avoidLine}`;
-
-      const restRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(
-          viteKey.trim()
-        )}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: 'application/json' },
-          }),
-        }
-      );
-      if (restRes.ok) {
-        const restJson = await restRes.json();
-        const text = restJson?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (typeof text === 'string' && text.trim()) {
-          const parsed = JSON.parse(text.trim());
-          if (
-            Array.isArray(parsed.split) &&
-            parsed.split.length === 7 &&
-            Array.isArray(parsed.quotes) &&
-            parsed.quotes.length > 0
-          ) {
-            const hydrated = hydrateSplit(
-              parsed.split as RawDayTemplate[],
-              deterministicSplit,
-              seed
-            );
-            const prevFirst = input.previousSplit?.[0]?.exercises?.[0]?.name;
-            const nextFirst = hydrated[0]?.exercises?.[0]?.name;
-            if (!prevFirst || prevFirst !== nextFirst || seed === 0) {
-              return {
-                split: hydrated,
-                quotes: parsed.quotes as string[],
-                source: 'gemini-2.5-flash',
-              };
-            }
-          }
-        }
-      }
-    }
-  } catch {
-    // Smoothly proceed to rich deterministic engine below
-  }
-
   return {
     split: deterministicSplit,
     quotes: buildVariedQuotes(input.name, input.schedule.vibe, seed),

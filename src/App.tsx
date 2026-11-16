@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { AlertTriangle, Loader2, X } from 'lucide-react';
 import type {
   PhysiqueGoal,
   ReminderSettings,
@@ -7,11 +7,7 @@ import type {
   ToastMessage,
   UserProfile,
 } from './types/kinetix';
-import {
-  getSupabaseConfigDiagnostics,
-  isSupabaseConfigured,
-  supabase,
-} from './lib/supabase';
+import { supabase } from './lib/supabase';
 import { db, getTodaySplitDayIndex } from './services/db';
 import {
   checkSupabaseConnection,
@@ -45,12 +41,8 @@ import { ToastOverlay } from './components/ToastOverlay';
 
 export default function App() {
   const [users, setUsers] = useState<UserProfile[]>(() => db.getUsers());
-  const [activeUser, setActiveUser] = useState<UserProfile | null>(() =>
-    isSupabaseConfigured() ? null : db.getActiveUser()
-  );
-  const [viewMode, setViewMode] = useState<'auth' | 'onboarding' | 'app'>(() =>
-    isSupabaseConfigured() ? 'auth' : db.getActiveUser() ? 'app' : 'auth'
-  );
+  const [activeUser, setActiveUser] = useState<UserProfile | null>(null);
+  const [viewMode, setViewMode] = useState<'auth' | 'onboarding' | 'app'>('auth');
   const [onboardingPrefill, setOnboardingPrefill] = useState<{
     email?: string;
     password?: string;
@@ -61,20 +53,13 @@ export default function App() {
   );
   const [cloudModalOpen, setCloudModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(() => isSupabaseConfigured());
-  const [connectionStatus, setConnectionStatus] = useState<SupabaseConnectionStatus>(() =>
-    isSupabaseConfigured()
-      ? {
-          connected: true,
-          label: 'Cloud Synced',
-          detail: 'Verifying Supabase connection...',
-        }
-      : {
-          connected: false,
-          label: 'Local Only (Check Keys/Tables)',
-          detail: getSupabaseConfigDiagnostics(),
-        }
-  );
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
+  const [supabaseErrorBanner, setSupabaseErrorBanner] = useState<string | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<SupabaseConnectionStatus>({
+    connected: true,
+    label: 'Cloud Synced',
+    detail: 'Supabase client active (https://jjiiqxflepnsaybotsdx.supabase.co).',
+  });
   const manualAuthInFlightRef = useRef(false);
 
   // Never compute gender theme while auth is loading; wait for profile row
@@ -88,11 +73,6 @@ export default function App() {
 
   // Boot session restoration & real-time Supabase onAuthStateChange listener
   useEffect(() => {
-    if (!isSupabaseConfigured() || !supabase) {
-      setIsAuthLoading(false);
-      return;
-    }
-
     let cancelled = false;
 
     const applyHydratedUser = (cloudUser: UserProfile) => {
@@ -108,15 +88,22 @@ export default function App() {
 
     const verifyCloud = async () => {
       const status = await checkSupabaseConnection();
-      if (!cancelled) setConnectionStatus(status);
+      if (cancelled) return;
+      setConnectionStatus(status);
+      if (status.diagnosticError) {
+        setSupabaseErrorBanner(status.diagnosticError);
+      }
     };
     void verifyCloud();
 
     restoreSupabaseSession()
-      .then((cloudUser) => {
+      .then((res) => {
         if (cancelled) return;
-        if (cloudUser) {
-          applyHydratedUser(cloudUser);
+        if (res.error) {
+          setSupabaseErrorBanner(res.error);
+        }
+        if (res.user) {
+          applyHydratedUser(res.user);
         } else {
           db.signOut();
           setActiveUser(null);
@@ -145,9 +132,13 @@ export default function App() {
       ) {
         setIsAuthLoading(true);
         hydrateAuthenticatedUserFromSupabase(session.user)
-          .then((cloudUser) => {
-            if (!cancelled && cloudUser) {
-              applyHydratedUser(cloudUser);
+          .then((res) => {
+            if (cancelled) return;
+            if (res.error) {
+              setSupabaseErrorBanner(res.error);
+            }
+            if (res.user) {
+              applyHydratedUser(res.user);
             }
           })
           .finally(() => {
@@ -201,8 +192,8 @@ export default function App() {
   };
 
   const trackWriteResult = (res: SupabaseWriteResult, contextLabel: string) => {
-    if (!isSupabaseConfigured()) return;
     if (res.ok) {
+      setSupabaseErrorBanner(null);
       setConnectionStatus({
         connected: true,
         label: 'Cloud Synced',
@@ -212,30 +203,19 @@ export default function App() {
         })}.`,
       });
     } else if (res.error) {
+      setSupabaseErrorBanner(res.error);
       setConnectionStatus({
         connected: true,
         label: 'Cloud Synced',
-        detail: `Supabase active · ${contextLabel} sync note: ${res.error}`,
+        detail: res.error,
+        diagnosticError: res.error,
       });
       pushToast({
-        title: 'Cloud Sync Issue',
+        title: 'Supabase Sync Error',
         body: res.error,
         category: 'alert',
       });
     }
-  };
-
-  const handleQuickSwitch = (userId: string) => {
-    const switched = db.switchUser(userId);
-    if (!switched) return;
-    syncUsers(switched);
-    setSelectedWorkoutDay(
-      typeof switched.currentSplitDay === 'number'
-        ? switched.currentSplitDay
-        : getTodaySplitDayIndex()
-    );
-    setActiveTab('home');
-    setViewMode('app');
   };
 
   const handleEmailSignIn = async (
@@ -243,13 +223,19 @@ export default function App() {
     password: string
   ): Promise<string | undefined> => {
     manualAuthInFlightRef.current = true;
-    if (isSupabaseConfigured()) {
-      setIsAuthLoading(true);
-    }
+    setIsAuthLoading(true);
+    setSupabaseErrorBanner(null);
     try {
       const res = await signInWithSupabase(email, password);
-      if (res.error || !res.user) {
-        return res.error ?? 'Unable to sign in.';
+      if (res.error && !res.user) {
+        setSupabaseErrorBanner(res.error);
+        return res.error;
+      }
+      if (!res.user) {
+        return 'Supabase Error: Unable to sign in.';
+      }
+      if (res.error) {
+        setSupabaseErrorBanner(res.error);
       }
       syncUsers(res.user);
       setSelectedWorkoutDay(
@@ -259,9 +245,10 @@ export default function App() {
       );
       setActiveTab('home');
       setViewMode('app');
-      if (isSupabaseConfigured()) {
-        void checkSupabaseConnection().then(setConnectionStatus);
-      }
+      void checkSupabaseConnection().then((status) => {
+        setConnectionStatus(status);
+        if (status.diagnosticError) setSupabaseErrorBanner(status.diagnosticError);
+      });
       return undefined;
     } finally {
       manualAuthInFlightRef.current = false;
@@ -287,19 +274,28 @@ export default function App() {
     blueprintSource: 'gemini-2.5-flash' | 'kinetix-engine';
   }): Promise<string | undefined> => {
     manualAuthInFlightRef.current = true;
+    setSupabaseErrorBanner(null);
     try {
       const res = await signUpWithSupabase(data);
-      if (res.error || !res.user) {
-        return res.error ?? 'Unable to create athlete account.';
+      if (res.error && !res.user) {
+        setSupabaseErrorBanner(res.error);
+        return res.error;
+      }
+      if (!res.user) {
+        return 'Supabase Error: Unable to create athlete account.';
+      }
+      if (res.error) {
+        setSupabaseErrorBanner(res.error);
       }
       const created = res.user;
       syncUsers(created);
       setSelectedWorkoutDay(getTodaySplitDayIndex());
       setActiveTab('home');
       setViewMode('app');
-      if (isSupabaseConfigured()) {
-        void checkSupabaseConnection().then(setConnectionStatus);
-      }
+      void checkSupabaseConnection().then((status) => {
+        setConnectionStatus(status);
+        if (status.diagnosticError) setSupabaseErrorBanner(status.diagnosticError);
+      });
       pushToast({
         title: 'Custom Blueprint Ready',
         body: res.notice
@@ -378,6 +374,26 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#050508] text-white">
       <div className="max-w-[430px] mx-auto min-h-screen bg-[#090A0F] text-white relative overflow-x-hidden shadow-2xl border-x border-white/5">
+        {supabaseErrorBanner && (
+          <div
+            role="alert"
+            className="sticky top-0 z-50 px-3 py-2.5 bg-rose-950/95 border-b border-rose-500/50 text-xs text-rose-100 flex items-start justify-between gap-2 backdrop-blur-md"
+          >
+            <div className="flex items-start gap-2 min-w-0">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <span className="leading-snug break-words">{supabaseErrorBanner}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSupabaseErrorBanner(null)}
+              aria-label="Dismiss Supabase error banner"
+              className="text-rose-200/70 hover:text-white shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         <ToastOverlay
           toasts={toasts}
           onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
@@ -403,8 +419,6 @@ export default function App() {
           <>
             {viewMode === 'auth' && (
               <AuthScreen
-                users={users}
-                onQuickSwitch={handleQuickSwitch}
                 onEmailSignIn={handleEmailSignIn}
                 onStartOnboarding={handleStartOnboarding}
                 onOpenCloudModal={() => setCloudModalOpen(true)}
@@ -424,12 +438,8 @@ export default function App() {
           <>
             <TopBar
               activeUser={activeUser}
-              allUsers={users}
               theme={theme}
               connectionStatus={connectionStatus}
-              onSwitchUser={handleQuickSwitch}
-              onAddNewAthlete={() => handleStartOnboarding()}
-              onSignOut={handleSignOut}
               onMarkNotificationsRead={async () => {
                 const updated = db.markNotificationsRead(activeUser.id);
                 syncUsers(updated);
@@ -574,6 +584,7 @@ export default function App() {
                   activeUser={activeUser}
                   allUsers={users}
                   theme={theme}
+                  onSupabaseError={(err) => setSupabaseErrorBanner(err)}
                   onSyncRemoteUsers={(remoteUsers) => {
                     const merged = db.mergeRemoteUsers(remoteUsers);
                     setUsers(merged);

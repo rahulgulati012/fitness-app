@@ -1,9 +1,5 @@
 import type { User as SupabaseAuthUser } from '@supabase/supabase-js';
-import {
-  getSupabaseConfigDiagnostics,
-  isSupabaseConfigured,
-  supabase,
-} from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { buildVariedQuotes, buildVariedSplit } from '../data/workoutEngine';
 import type {
   BodyMeasurementEntry,
@@ -26,9 +22,10 @@ import {
 } from './db';
 
 export interface SupabaseConnectionStatus {
-  connected: boolean;
-  label: string;
+  connected: true;
+  label: 'Cloud Synced';
   detail: string;
+  diagnosticError?: string;
 }
 
 export interface SupabaseWriteResult {
@@ -36,31 +33,43 @@ export interface SupabaseWriteResult {
   error?: string;
 }
 
+export function formatSupabaseError(
+  err: { message?: string; code?: string } | null | undefined,
+  fallback = 'Request failed'
+): string {
+  if (!err) return `Supabase Error: ${fallback}`;
+  const msg = err.message || fallback;
+  const code = err.code || 'UNKNOWN';
+  return `Supabase Error: ${msg} (${code})`;
+}
+
 export async function checkSupabaseConnection(): Promise<SupabaseConnectionStatus> {
-  if (!isSupabaseConfigured() || !supabase) {
-    return {
-      connected: false,
-      label: 'Local Only (Check Keys/Tables)',
-      detail: getSupabaseConfigDiagnostics(),
-    };
-  }
   try {
-    const { error } = await supabase.from('profiles').select('id').limit(1);
+    const { error } = await supabase.from('profiles').select('*').limit(1);
+    if (error) {
+      const diagnostic = formatSupabaseError(error, 'profiles select failed');
+      return {
+        connected: true,
+        label: 'Cloud Synced',
+        detail: diagnostic,
+        diagnosticError: diagnostic,
+      };
+    }
     return {
       connected: true,
       label: 'Cloud Synced',
-      detail: error
-        ? `Supabase client active (profiles check note: ${error.message}).`
-        : 'Supabase connected and profiles table reachable.',
+      detail: 'Supabase connected and profiles table reachable.',
     };
   } catch (err) {
+    const diagnostic =
+      err instanceof Error
+        ? `Supabase Error: ${err.message} (NETWORK)`
+        : 'Supabase Error: Unable to reach Supabase server (NETWORK)';
     return {
       connected: true,
       label: 'Cloud Synced',
-      detail:
-        err instanceof Error
-          ? `Supabase client active (${err.message}).`
-          : 'Supabase client active.',
+      detail: diagnostic,
+      diagnosticError: diagnostic,
     };
   }
 }
@@ -642,8 +651,10 @@ function buildUserProfileFromAuthUser(authUser: SupabaseAuthUser): UserProfile {
 
 export async function hydrateAuthenticatedUserFromSupabase(
   authUser: SupabaseAuthUser
-): Promise<UserProfile | null> {
-  if (!supabase || !isUuid(authUser.id)) return null;
+): Promise<{ user: UserProfile | null; error?: string }> {
+  if (!isUuid(authUser.id)) {
+    return { user: null, error: 'Supabase Error: Invalid athlete UUID (INVALID_ID)' };
+  }
 
   const { data: profileData, error: profileErr } = await supabase
     .from('profiles')
@@ -651,11 +662,25 @@ export async function hydrateAuthenticatedUserFromSupabase(
     .eq('id', authUser.id)
     .maybeSingle();
 
+  if (profileErr) {
+    return {
+      user: null,
+      error: formatSupabaseError(profileErr, 'Unable to read profiles table'),
+    };
+  }
+
   if (profileData) {
     const [planRes, logs] = await Promise.all([
       supabase.from('user_plans').select('*').eq('user_id', authUser.id).maybeSingle(),
       fetch30DayLogsForUsers([authUser.id]),
     ]);
+
+    if (planRes.error) {
+      return {
+        user: null,
+        error: formatSupabaseError(planRes.error, 'Unable to read user_plans table'),
+      };
+    }
 
     const planRow = (planRes.data as UserPlanRow | null) ?? null;
     const hydrated = mapSupabaseRowsToUserProfile(
@@ -665,37 +690,44 @@ export async function hydrateAuthenticatedUserFromSupabase(
     );
 
     if (!planRow || !Array.isArray(planRow.workout_json) || planRow.workout_json.length === 0) {
-      await syncUserPlanToSupabase(hydrated);
+      const planWrite = await syncUserPlanToSupabase(hydrated);
+      if (!planWrite.ok) {
+        return { user: db.upsertSyncedUser(hydrated, true), error: planWrite.error };
+      }
     }
 
-    return db.upsertSyncedUser(hydrated, true);
+    return { user: db.upsertSyncedUser(hydrated, true) };
   }
 
-  // If no row exists yet in public.profiles (e.g., older Auth account or first confirmed login),
-  // create the profile & user_plans row immediately using user_metadata.
-  if (!profileErr) {
-    const created = buildUserProfileFromAuthUser(authUser);
-    db.saveUserCache(created);
-    await syncAllUserTablesToSupabase(created);
-    return db.upsertSyncedUser(created, true);
-  }
-
-  const cached = db.getUserCache(authUser.id);
-  if (cached) return db.upsertSyncedUser(cached, true);
-
-  const fallbackCreated = buildUserProfileFromAuthUser(authUser);
-  await syncAllUserTablesToSupabase(fallbackCreated);
-  return db.upsertSyncedUser(fallbackCreated, true);
+  // First login without an existing profiles row: create and upsert profile, plan, and initial log
+  const created = buildUserProfileFromAuthUser(authUser);
+  db.saveUserCache(created);
+  const syncRes = await syncAllUserTablesToSupabase(created);
+  return {
+    user: db.upsertSyncedUser(created, true),
+    error: syncRes.ok ? undefined : syncRes.error,
+  };
 }
 
-export async function restoreSupabaseSession(): Promise<UserProfile | null> {
-  if (!isSupabaseConfigured() || !supabase) return null;
+export async function restoreSupabaseSession(): Promise<{
+  user: UserProfile | null;
+  error?: string;
+}> {
   try {
     const { data, error } = await supabase.auth.getSession();
-    if (error || !data.session?.user) return null;
+    if (error) {
+      return { user: null, error: formatSupabaseError(error, 'Session lookup failed') };
+    }
+    if (!data.session?.user) return { user: null };
     return await hydrateAuthenticatedUserFromSupabase(data.session.user);
-  } catch {
-    return null;
+  } catch (err) {
+    return {
+      user: null,
+      error:
+        err instanceof Error
+          ? `Supabase Error: ${err.message} (SESSION_ERROR)`
+          : 'Supabase Error: Unable to restore session (SESSION_ERROR)',
+    };
   }
 }
 
@@ -705,12 +737,6 @@ export async function signInWithSupabase(
 ): Promise<{ user?: UserProfile; error?: string }> {
   const cleanEmail = email.trim().toLowerCase();
 
-  // Offline / AI Studio preview fallback when Supabase env vars are not set
-  if (!isSupabaseConfigured() || !supabase) {
-    return db.signInWithEmail(cleanEmail, password);
-  }
-
-  // When Supabase IS configured: never check localStorage for password/account existence.
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: cleanEmail,
@@ -718,24 +744,24 @@ export async function signInWithSupabase(
     });
 
     if (error) {
-      return { error: error.message };
+      return { error: formatSupabaseError(error, 'Sign in failed') };
     }
 
     if (!data.user) {
-      return { error: 'Authentication succeeded but no user record was returned.' };
+      return { error: 'Supabase Error: Authentication succeeded without a user record (NO_USER)' };
     }
 
     const hydrated = await hydrateAuthenticatedUserFromSupabase(data.user);
-    if (!hydrated) {
-      return { error: 'Unable to load athlete profile from Supabase.' };
+    if (!hydrated.user) {
+      return { error: hydrated.error || 'Supabase Error: Unable to load athlete profile (PROFILE_LOAD)' };
     }
-    return { user: hydrated };
+    return { user: hydrated.user, error: hydrated.error };
   } catch (err) {
     return {
       error:
         err instanceof Error
-          ? err.message
-          : 'Network error contacting Supabase authentication.',
+          ? `Supabase Error: ${err.message} (NETWORK)`
+          : 'Supabase Error: Network error contacting Supabase authentication (NETWORK)',
     };
   }
 }
@@ -753,11 +779,6 @@ export async function signUpWithSupabase(input: {
   blueprintSource: 'gemini-2.5-flash' | 'kinetix-engine';
 }): Promise<{ user?: UserProfile; syncedToCloud: boolean; notice?: string; error?: string }> {
   const cleanEmail = input.email.trim().toLowerCase();
-
-  if (!isSupabaseConfigured() || !supabase) {
-    const localUser = db.createUserProfile(input);
-    return { user: localUser, syncedToCloud: false };
-  }
 
   try {
     const { data, error } = await supabase.auth.signUp({
@@ -781,11 +802,14 @@ export async function signUpWithSupabase(input: {
     });
 
     if (error) {
-      return { syncedToCloud: false, error: error.message };
+      return { syncedToCloud: false, error: formatSupabaseError(error, 'Sign up failed') };
     }
 
     if (!data.user) {
-      return { syncedToCloud: false, error: 'Signup completed without a user ID.' };
+      return {
+        syncedToCloud: false,
+        error: 'Supabase Error: Signup completed without a user ID (NO_USER)',
+      };
     }
 
     const created = db.createUserProfile({
@@ -794,13 +818,13 @@ export async function signUpWithSupabase(input: {
     });
     db.saveUserCache(created);
 
-    // Immediately upsert profile, gender-matched 6-exercise workout plan, and initial daily log
     const syncRes = await syncAllUserTablesToSupabase(created);
 
     if (!data.session && !syncRes.ok) {
       return {
         user: created,
         syncedToCloud: false,
+        error: syncRes.error,
         notice: 'Check your email to confirm your account, then sign in from any device.',
       };
     }
@@ -809,7 +833,8 @@ export async function signUpWithSupabase(input: {
       return {
         user: created,
         syncedToCloud: false,
-        notice: `Account created, but cloud sync reported: ${syncRes.error}`,
+        error: syncRes.error,
+        notice: syncRes.error,
       };
     }
 
@@ -817,25 +842,27 @@ export async function signUpWithSupabase(input: {
   } catch (err) {
     return {
       syncedToCloud: false,
-      error: err instanceof Error ? err.message : 'Unable to reach Supabase signup.',
+      error:
+        err instanceof Error
+          ? `Supabase Error: ${err.message} (SIGNUP_NETWORK)`
+          : 'Supabase Error: Unable to reach Supabase signup (SIGNUP_NETWORK)',
     };
   }
 }
 
 export async function signOutFromSupabase(): Promise<void> {
   db.signOut();
-  if (!isSupabaseConfigured() || !supabase) return;
   try {
     await supabase.auth.signOut();
   } catch {
-    // Ignore offline signout error
+    // Ignore network error during signout
   }
 }
 
 export async function syncProfileToSupabase(user: UserProfile): Promise<SupabaseWriteResult> {
   db.saveUserCache(user);
-  if (!isSupabaseConfigured() || !supabase || !isUuid(user.id)) {
-    return { ok: false, error: getSupabaseConfigDiagnostics() };
+  if (!isUuid(user.id)) {
+    return { ok: false, error: 'Supabase Error: Invalid athlete UUID (INVALID_ID)' };
   }
   try {
     const fullPayload = toFullProfilePayload(user);
@@ -844,6 +871,15 @@ export async function syncProfileToSupabase(user: UserProfile): Promise<Supabase
       .upsert(fullPayload, { onConflict: 'id' });
 
     if (!error) return { ok: true };
+
+    const isMissingCol =
+      error.code === '42703' ||
+      error.code === 'PGRST204' ||
+      /column .* does not exist/i.test(error.message || '');
+
+    if (!isMissingCol) {
+      return { ok: false, error: formatSupabaseError(error, 'Profile upsert failed') };
+    }
 
     const { error: squadOnlyErr } = await supabase
       .from('profiles')
@@ -861,16 +897,22 @@ export async function syncProfileToSupabase(user: UserProfile): Promise<Supabase
       .upsert(strictMinimal, { onConflict: 'id' });
     if (!minimalErr) return { ok: true };
 
-    return { ok: false, error: minimalErr.message || error.message };
+    return { ok: false, error: formatSupabaseError(minimalErr, error.message) };
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : 'Profile sync failed.' };
+    return {
+      ok: false,
+      error:
+        err instanceof Error
+          ? `Supabase Error: ${err.message} (PROFILE_UPSERT)`
+          : 'Supabase Error: Profile sync failed (PROFILE_UPSERT)',
+    };
   }
 }
 
 export async function syncUserPlanToSupabase(user: UserProfile): Promise<SupabaseWriteResult> {
   db.saveUserCache(user);
-  if (!isSupabaseConfigured() || !supabase || !isUuid(user.id)) {
-    return { ok: false, error: getSupabaseConfigDiagnostics() };
+  if (!isUuid(user.id)) {
+    return { ok: false, error: 'Supabase Error: Invalid athlete UUID (INVALID_ID)' };
   }
   try {
     const payload = toUserPlanPayload(user);
@@ -879,17 +921,15 @@ export async function syncUserPlanToSupabase(user: UserProfile): Promise<Supabas
       .upsert(payload, { onConflict: 'user_id' });
     if (!error) return { ok: true };
 
-    const { error: bareErr } = await supabase
-      .from('user_plans')
-      .upsert(
-        { user_id: user.id, workout_json: user.split, quotes_json: user.quotes },
-        { onConflict: 'user_id' }
-      );
-    if (!bareErr) return { ok: true };
-
-    return { ok: false, error: bareErr.message || error.message };
+    return { ok: false, error: formatSupabaseError(error, 'User plan upsert failed') };
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : 'Plan sync failed.' };
+    return {
+      ok: false,
+      error:
+        err instanceof Error
+          ? `Supabase Error: ${err.message} (PLAN_UPSERT)`
+          : 'Supabase Error: Plan sync failed (PLAN_UPSERT)',
+    };
   }
 }
 
@@ -898,8 +938,8 @@ export async function syncDailyLogToSupabase(
   activeDayIndex?: number
 ): Promise<SupabaseWriteResult> {
   db.saveUserCache(user);
-  if (!isSupabaseConfigured() || !supabase || !isUuid(user.id)) {
-    return { ok: false, error: getSupabaseConfigDiagnostics() };
+  if (!isUuid(user.id)) {
+    return { ok: false, error: 'Supabase Error: Invalid athlete UUID (INVALID_ID)' };
   }
   try {
     const payload = toDailyLogPayload(user, activeDayIndex);
@@ -907,6 +947,15 @@ export async function syncDailyLogToSupabase(
       .from('daily_logs')
       .upsert(payload, { onConflict: 'user_id,date' });
     if (!error) return { ok: true };
+
+    const isMissingCol =
+      error.code === '42703' ||
+      error.code === 'PGRST204' ||
+      /column .* does not exist/i.test(error.message || '');
+
+    if (!isMissingCol) {
+      return { ok: false, error: formatSupabaseError(error, 'Daily log upsert failed') };
+    }
 
     const { date: dateVal, ...rest } = payload;
     const { error: coreDateErr } = await supabase
@@ -933,9 +982,15 @@ export async function syncDailyLogToSupabase(
       );
     if (!logDateErr) return { ok: true };
 
-    return { ok: false, error: logDateErr.message || error.message };
+    return { ok: false, error: formatSupabaseError(logDateErr, error.message) };
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : 'Daily log sync failed.' };
+    return {
+      ok: false,
+      error:
+        err instanceof Error
+          ? `Supabase Error: ${err.message} (LOG_UPSERT)`
+          : 'Supabase Error: Daily log sync failed (LOG_UPSERT)',
+    };
   }
 }
 
@@ -943,8 +998,8 @@ export async function syncAllUserTablesToSupabase(
   user: UserProfile
 ): Promise<SupabaseWriteResult> {
   db.saveUserCache(user);
-  if (!isSupabaseConfigured() || !supabase || !isUuid(user.id)) {
-    return { ok: false, error: getSupabaseConfigDiagnostics() };
+  if (!isUuid(user.id)) {
+    return { ok: false, error: 'Supabase Error: Invalid athlete UUID (INVALID_ID)' };
   }
   try {
     const profileRes = await syncProfileToSupabase(user);
@@ -957,15 +1012,21 @@ export async function syncAllUserTablesToSupabase(
     if (!logRes.ok) return logRes;
     return { ok: true };
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : 'Cloud sync failed.' };
+    return {
+      ok: false,
+      error:
+        err instanceof Error
+          ? `Supabase Error: ${err.message} (SYNC_ALL)`
+          : 'Supabase Error: Cloud sync failed (SYNC_ALL)',
+    };
   }
 }
 
 async function hydrateProfileRowsWithTodayAndPlans(
   profiles: ProfileRow[],
   prefetchedTodayLogs?: DailyLogRow[]
-): Promise<UserProfile[]> {
-  if (!supabase || profiles.length === 0) return [];
+): Promise<{ users: UserProfile[]; error?: string }> {
+  if (profiles.length === 0) return { users: [] };
   const ids = profiles.map((p) => p.id);
   const todayDateStr = getTodayDateKey();
 
@@ -976,6 +1037,16 @@ async function hydrateProfileRowsWithTodayAndPlans(
       : supabase.from('daily_logs').select('*').eq('date', todayDateStr).in('user_id', ids),
     fetch30DayLogsForUsers(ids),
   ]);
+
+  if (plansRes.error) {
+    return { users: [], error: formatSupabaseError(plansRes.error, 'user_plans query failed') };
+  }
+  if (todayLogsRes.error) {
+    return {
+      users: [],
+      error: formatSupabaseError(todayLogsRes.error, 'daily_logs query failed'),
+    };
+  }
 
   const plansByUser = new Map<string, UserPlanRow>(
     ((plansRes.data as UserPlanRow[] | null) ?? []).map((pl) => [pl.user_id, pl])
@@ -1007,18 +1078,12 @@ async function hydrateProfileRowsWithTodayAndPlans(
   );
 
   db.mergeRemoteUsers(cloudUsers);
-  return cloudUsers;
+  return { users: cloudUsers };
 }
 
 export async function fetchDiscoverableSupabaseAthletes(
   activeUserId: string
-): Promise<{ results: UserProfile[]; fromCloud: boolean; error?: string }> {
-  const localDiscoverable = db.getUsers().filter((u) => u.id !== activeUserId);
-
-  if (!isSupabaseConfigured() || !supabase) {
-    return { results: localDiscoverable, fromCloud: false };
-  }
-
+): Promise<{ results: UserProfile[]; error?: string }> {
   try {
     const todayDateStr = getTodayDateKey();
     const [profilesRes, todayLogsRes] = await Promise.all([
@@ -1026,27 +1091,34 @@ export async function fetchDiscoverableSupabaseAthletes(
       supabase.from('daily_logs').select('*').eq('date', todayDateStr),
     ]);
 
-    if (profilesRes.error || !profilesRes.data) {
+    if (profilesRes.error) {
       return {
         results: [],
-        fromCloud: false,
-        error: profilesRes.error?.message || 'Unable to fetch profiles from Supabase.',
+        error: formatSupabaseError(profilesRes.error, 'Unable to fetch profiles'),
+      };
+    }
+    if (todayLogsRes.error) {
+      return {
+        results: [],
+        error: formatSupabaseError(todayLogsRes.error, 'Unable to fetch daily_logs'),
       };
     }
 
-    const otherProfiles = (profilesRes.data as ProfileRow[]).filter(
+    const otherProfiles = ((profilesRes.data as ProfileRow[] | null) ?? []).filter(
       (p) => p.id !== activeUserId
     );
-    const cloudUsers = await hydrateProfileRowsWithTodayAndPlans(
+    const hydrated = await hydrateProfileRowsWithTodayAndPlans(
       otherProfiles,
       (todayLogsRes.data as DailyLogRow[] | null) ?? []
     );
-    return { results: cloudUsers, fromCloud: true };
+    return { results: hydrated.users, error: hydrated.error };
   } catch (err) {
     return {
       results: [],
-      fromCloud: false,
-      error: err instanceof Error ? err.message : 'Unable to fetch Squad directory.',
+      error:
+        err instanceof Error
+          ? `Supabase Error: ${err.message} (SQUAD_FETCH)`
+          : 'Supabase Error: Unable to fetch Squad directory (SQUAD_FETCH)',
     };
   }
 }
@@ -1054,26 +1126,10 @@ export async function fetchDiscoverableSupabaseAthletes(
 export async function searchSupabaseAthletes(
   query: string,
   activeUserId: string
-): Promise<{ results: UserProfile[]; fromCloud: boolean; error?: string }> {
+): Promise<{ results: UserProfile[]; error?: string }> {
   const clean = query.trim();
-  const localMatches = db.getUsers().filter((u) => {
-    if (u.id === activeUserId) return false;
-    if (!clean) return false;
-    const q = clean.toLowerCase();
-    return (
-      u.name.toLowerCase().includes(q) ||
-      u.email.toLowerCase().includes(q) ||
-      u.username.toLowerCase().includes(q) ||
-      u.goal.toLowerCase().includes(q)
-    );
-  });
-
   if (!clean) {
     return fetchDiscoverableSupabaseAthletes(activeUserId);
-  }
-
-  if (!isSupabaseConfigured() || !supabase) {
-    return { results: localMatches, fromCloud: false };
   }
 
   try {
@@ -1085,15 +1141,20 @@ export async function searchSupabaseAthletes(
       supabase.from('daily_logs').select('*').eq('date', todayDateStr),
     ]);
 
-    if (profilesRes.error || !profilesRes.data) {
+    if (profilesRes.error) {
       return {
         results: [],
-        fromCloud: false,
-        error: profilesRes.error?.message || 'Unable to query profiles from Supabase.',
+        error: formatSupabaseError(profilesRes.error, 'Unable to query profiles'),
+      };
+    }
+    if (todayLogsRes.error) {
+      return {
+        results: [],
+        error: formatSupabaseError(todayLogsRes.error, 'Unable to query daily_logs'),
       };
     }
 
-    const matchedProfiles = (profilesRes.data as ProfileRow[]).filter((p) => {
+    const matchedProfiles = ((profilesRes.data as ProfileRow[] | null) ?? []).filter((p) => {
       if (p.id === activeUserId) return false;
       const name = (p.display_name || '').toLowerCase();
       const email = (p.email || '').toLowerCase();
@@ -1109,26 +1170,28 @@ export async function searchSupabaseAthletes(
       );
     });
 
-    const cloudUsers = await hydrateProfileRowsWithTodayAndPlans(
+    const hydrated = await hydrateProfileRowsWithTodayAndPlans(
       matchedProfiles,
       (todayLogsRes.data as DailyLogRow[] | null) ?? []
     );
-    return { results: cloudUsers, fromCloud: true };
+    return { results: hydrated.users, error: hydrated.error };
   } catch (err) {
     return {
       results: [],
-      fromCloud: false,
-      error: err instanceof Error ? err.message : 'Unable to search Supabase athletes.',
+      error:
+        err instanceof Error
+          ? `Supabase Error: ${err.message} (SQUAD_SEARCH)`
+          : 'Supabase Error: Unable to search Supabase athletes (SQUAD_SEARCH)',
     };
   }
 }
 
 export async function refreshSquadLiveStatuses(
   squadIds: string[]
-): Promise<UserProfile[]> {
+): Promise<{ users: UserProfile[]; error?: string }> {
   const validIds = squadIds.filter(isUuid);
-  if (validIds.length === 0 || !isSupabaseConfigured() || !supabase) {
-    return [];
+  if (validIds.length === 0) {
+    return { users: [] };
   }
 
   try {
@@ -1138,13 +1201,30 @@ export async function refreshSquadLiveStatuses(
       supabase.from('daily_logs').select('*').eq('date', todayDateStr).in('user_id', validIds),
     ]);
 
-    if (profilesRes.error || !profilesRes.data) return [];
+    if (profilesRes.error) {
+      return {
+        users: [],
+        error: formatSupabaseError(profilesRes.error, 'Unable to refresh Squad profiles'),
+      };
+    }
+    if (todayLogsRes.error) {
+      return {
+        users: [],
+        error: formatSupabaseError(todayLogsRes.error, 'Unable to refresh Squad logs'),
+      };
+    }
 
     return await hydrateProfileRowsWithTodayAndPlans(
-      profilesRes.data as ProfileRow[],
+      (profilesRes.data as ProfileRow[] | null) ?? [],
       (todayLogsRes.data as DailyLogRow[] | null) ?? []
     );
-  } catch {
-    return [];
+  } catch (err) {
+    return {
+      users: [],
+      error:
+        err instanceof Error
+          ? `Supabase Error: ${err.message} (SQUAD_REFRESH)`
+          : 'Supabase Error: Unable to refresh Squad statuses (SQUAD_REFRESH)',
+    };
   }
 }

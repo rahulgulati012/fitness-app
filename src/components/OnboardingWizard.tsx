@@ -14,7 +14,6 @@ import {
   calculateWaterTargetMl,
   resolveTheme,
 } from '../services/theme';
-import { isSupabaseConfigured } from '../lib/supabase';
 import { FEMALE_GOALS, MALE_GOALS } from '../services/db';
 import { generateAthleteBlueprint } from '../services/blueprintFallback';
 
@@ -57,13 +56,10 @@ export function OnboardingWizard({
   onCancel,
   onComplete,
 }: OnboardingWizardProps) {
-  const supabaseLive = isSupabaseConfigured();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [name, setName] = useState('');
   const [email, setEmail] = useState(initialEmail);
-  const [password, setPassword] = useState(
-    initialPassword || (supabaseLive ? '' : 'kinetix123')
-  );
+  const [password, setPassword] = useState(initialPassword || '');
   const [gender, setGender] = useState<Gender>('female');
   const [heightCm, setHeightCm] = useState(168);
   const [weightKg, setWeightKg] = useState(58);
@@ -109,15 +105,13 @@ export function OnboardingWizard({
         setSignupError('Please enter your display name.');
         return;
       }
-      if (supabaseLive) {
-        if (!email.trim() || !email.includes('@')) {
-          setSignupError('Enter a valid email address for your athlete account.');
-          return;
-        }
-        if (password.trim().length < 6) {
-          setSignupError('Password must be at least 6 characters.');
-          return;
-        }
+      if (!email.trim() || !email.includes('@')) {
+        setSignupError('Enter a valid email address for your athlete account.');
+        return;
+      }
+      if (password.trim().length < 6) {
+        setSignupError('Password must be at least 6 characters.');
+        return;
       }
     }
     if (step < 4) {

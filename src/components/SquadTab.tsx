@@ -26,7 +26,6 @@ import {
   getShortGoalLabel,
   resolveTheme,
 } from '../services/theme';
-import { isSupabaseConfigured } from '../lib/supabase';
 import { getTodaySplitDayIndex } from '../services/db';
 import {
   fetchDiscoverableSupabaseAthletes,
@@ -42,6 +41,7 @@ interface SquadTabProps {
   onSendHype: (targetUserId: string) => void;
   onToggleSquadMember: (friendId: string) => void;
   onSyncRemoteUsers?: (users: UserProfile[]) => void;
+  onSupabaseError?: (error: string | null) => void;
 }
 
 export function SquadTab({
@@ -51,32 +51,33 @@ export function SquadTab({
   onSendHype,
   onToggleSquadMember,
   onSyncRemoteUsers,
+  onSupabaseError,
 }: SquadTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [searchingCloud, setSearchingCloud] = useState(false);
   const [remoteSearchResults, setRemoteSearchResults] = useState<UserProfile[] | null>(null);
-  const [discoverableCloudUsers, setDiscoverableCloudUsers] = useState<UserProfile[] | null>(null);
+  const [discoverableCloudUsers, setDiscoverableCloudUsers] = useState<UserProfile[]>([]);
 
   const todayIdx = getTodaySplitDayIndex();
-  const supabaseLive = isSupabaseConfigured();
-  const [loadingDiscover, setLoadingDiscover] = useState<boolean>(supabaseLive);
+  const [loadingDiscover, setLoadingDiscover] = useState<boolean>(true);
   const [cloudError, setCloudError] = useState<string | null>(null);
 
   const loadLiveDirectory = () => {
-    if (supabaseLive) {
-      setLoadingDiscover(true);
-    }
+    setLoadingDiscover(true);
     setCloudError(null);
 
     fetchDiscoverableSupabaseAthletes(activeUser.id)
-      .then(({ results, fromCloud, error }) => {
-        if (error) setCloudError(error);
-        if (fromCloud) {
-          setDiscoverableCloudUsers(results);
-          if (results.length > 0) {
-            onSyncRemoteUsers?.(results);
-          }
+      .then(({ results, error }) => {
+        if (error) {
+          setCloudError(error);
+          onSupabaseError?.(error);
+        } else {
+          onSupabaseError?.(null);
+        }
+        setDiscoverableCloudUsers(results);
+        if (results.length > 0) {
+          onSyncRemoteUsers?.(results);
         }
       })
       .finally(() => {
@@ -84,23 +85,24 @@ export function SquadTab({
       });
   };
 
-  // Refresh live daily_logs & profiles for added Squad members AND fetch discoverable athletes on mount
+  // Fetch live Supabase profiles & today's daily_logs on mount and refresh Squad members
   useEffect(() => {
     let cancelled = false;
-    if (supabaseLive) {
-      setLoadingDiscover(true);
-    }
+    setLoadingDiscover(true);
     setCloudError(null);
 
     fetchDiscoverableSupabaseAthletes(activeUser.id)
-      .then(({ results, fromCloud, error }) => {
+      .then(({ results, error }) => {
         if (cancelled) return;
-        if (error) setCloudError(error);
-        if (fromCloud) {
-          setDiscoverableCloudUsers(results);
-          if (results.length > 0) {
-            onSyncRemoteUsers?.(results);
-          }
+        if (error) {
+          setCloudError(error);
+          onSupabaseError?.(error);
+        } else {
+          onSupabaseError?.(null);
+        }
+        setDiscoverableCloudUsers(results);
+        if (results.length > 0) {
+          onSyncRemoteUsers?.(results);
         }
       })
       .finally(() => {
@@ -108,9 +110,14 @@ export function SquadTab({
       });
 
     if (activeUser.squadIds.length > 0) {
-      refreshSquadLiveStatuses(activeUser.squadIds).then((refreshed) => {
-        if (!cancelled && refreshed.length > 0) {
-          onSyncRemoteUsers?.(refreshed);
+      refreshSquadLiveStatuses(activeUser.squadIds).then(({ users, error }) => {
+        if (cancelled) return;
+        if (error) {
+          setCloudError(error);
+          onSupabaseError?.(error);
+        }
+        if (users.length > 0) {
+          onSyncRemoteUsers?.(users);
         }
       });
     }
@@ -118,9 +125,9 @@ export function SquadTab({
     return () => {
       cancelled = true;
     };
-  }, [activeUser.id, activeUser.squadIds.join(','), supabaseLive]);
+  }, [activeUser.id, activeUser.squadIds.join(',')]);
 
-  // Query Supabase profiles + daily_logs when user searches athletes
+  // Query Supabase profiles + daily_logs live when user types in search bar
   useEffect(() => {
     const clean = searchQuery.trim();
     if (!clean) {
@@ -136,7 +143,12 @@ export function SquadTab({
     const timer = setTimeout(async () => {
       const { results, error } = await searchSupabaseAthletes(clean, activeUser.id);
       if (!cancelled) {
-        if (error) setCloudError(error);
+        if (error) {
+          setCloudError(error);
+          onSupabaseError?.(error);
+        } else {
+          onSupabaseError?.(null);
+        }
         setRemoteSearchResults(results);
         setSearchingCloud(false);
         if (results.length > 0) {
@@ -151,33 +163,16 @@ export function SquadTab({
     };
   }, [searchQuery, activeUser.id]);
 
-  // In cloud mode, strictly filter out local seeded demo-* profiles
-  const cloudSafeUsers = supabaseLive
-    ? allUsers.filter((u) => !u.id.startsWith('demo-'))
-    : allUsers;
+  // Strictly exclude local demo-* profiles so only real Supabase database rows appear
+  const cloudUsers = allUsers.filter((u) => !u.id.startsWith('demo-'));
 
   // Personal Squad Members
-  const squadMembers = cloudSafeUsers.filter((u) => activeUser.squadIds.includes(u.id));
-  const otherAthletes = cloudSafeUsers.filter((u) => u.id !== activeUser.id);
+  const squadMembers = cloudUsers.filter((u) => activeUser.squadIds.includes(u.id));
 
   const cleanQuery = searchQuery.trim().toLowerCase();
-  const localSearchResults =
-    !supabaseLive && cleanQuery
-      ? otherAthletes.filter(
-          (u) =>
-            u.name.toLowerCase().includes(cleanQuery) ||
-            u.email.toLowerCase().includes(cleanQuery) ||
-            u.username.toLowerCase().includes(cleanQuery) ||
-            u.id.toLowerCase().includes(cleanQuery) ||
-            u.goal.toLowerCase().includes(cleanQuery)
-        )
-      : [];
-  const searchResults = supabaseLive ? (remoteSearchResults ?? []) : (remoteSearchResults ?? localSearchResults);
+  const searchResults = remoteSearchResults ?? [];
 
-  const discoverBaseList = supabaseLive
-    ? (discoverableCloudUsers ?? otherAthletes)
-    : otherAthletes;
-  const discoverSuggestions = discoverBaseList.filter(
+  const discoverSuggestions = discoverableCloudUsers.filter(
     (u) => !activeUser.squadIds.includes(u.id)
   );
 

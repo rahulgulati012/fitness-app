@@ -1,33 +1,23 @@
 import { useState } from 'react';
-import { Bell, ChevronDown, Flame, LogOut, Plus, RefreshCw, X } from 'lucide-react';
+import { Bell, Flame, X } from 'lucide-react';
 import type { ThemeTokens, UserProfile } from '../types/kinetix';
 import type { SupabaseConnectionStatus } from '../services/supabaseSync';
-import { isSupabaseConfigured } from '../lib/supabase';
 import { getShortGoalLabel } from '../services/theme';
 import { AthleteAvatar } from './AthleteAvatar';
 
 interface TopBarProps {
   activeUser: UserProfile;
-  allUsers: UserProfile[];
   theme: ThemeTokens;
   connectionStatus: SupabaseConnectionStatus;
-  onSwitchUser: (userId: string) => void;
-  onAddNewAthlete: () => void;
-  onSignOut: () => void;
   onMarkNotificationsRead: () => void;
 }
 
 export function TopBar({
   activeUser,
-  allUsers,
   theme,
   connectionStatus,
-  onSwitchUser,
-  onAddNewAthlete,
-  onSignOut,
   onMarkNotificationsRead,
 }: TopBarProps) {
-  const [switcherOpen, setSwitcherOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
 
@@ -38,7 +28,7 @@ export function TopBar({
     <>
       <header className="sticky top-0 z-40 px-4 py-2.5 bg-[#090A0F]/85 backdrop-blur-xl border-b border-white/[0.06]">
         <div className="flex items-center justify-between gap-2">
-          {/* Left: Avatar + Greeting + Status Pill + Goal Tag */}
+          {/* Left: Avatar + Greeting + Cloud Synced Pill + Goal Tag */}
           <div className="flex items-center gap-2.5 min-w-0">
             <AthleteAvatar
               name={activeUser.name}
@@ -55,19 +45,11 @@ export function TopBar({
                   type="button"
                   onClick={() => setStatusOpen((v) => !v)}
                   title={connectionStatus.detail}
-                  aria-label={`Sync status: ${connectionStatus.label}. ${connectionStatus.detail}`}
-                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold border whitespace-nowrap transition-colors ${
-                    connectionStatus.connected
-                      ? 'bg-white/[0.05] border-white/15 text-white/85'
-                      : 'bg-amber-500/15 border-amber-400/35 text-amber-200'
-                  }`}
+                  aria-label={`Sync status: Cloud Synced. ${connectionStatus.detail}`}
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold border whitespace-nowrap transition-colors bg-white/[0.05] border-white/15 text-white/85"
                 >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                      connectionStatus.connected ? 'bg-emerald-400' : 'bg-rose-500'
-                    }`}
-                  />
-                  <span>{connectionStatus.label}</span>
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-emerald-400" />
+                  <span>Cloud Synced</span>
                 </button>
               </div>
               <span
@@ -83,23 +65,8 @@ export function TopBar({
             </div>
           </div>
 
-          {/* Right: Quick Switcher (offline demo only) + Streak + Notification Bell */}
+          {/* Right: Streak + Notification Bell */}
           <div className="flex items-center gap-1.5 shrink-0">
-            {!isSupabaseConfigured() && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSwitcherOpen((v) => !v);
-                  setNotifOpen(false);
-                }}
-                aria-label="Switch athlete profile"
-                className="min-h-[38px] px-2.5 rounded-xl bg-[#1A1D28] border border-white/10 hover:border-white/25 text-xs font-medium text-white/85 flex items-center gap-1 transition-colors whitespace-nowrap shrink-0"
-              >
-                <RefreshCw className="w-3.5 h-3.5" style={{ color: theme.secondary }} />
-                <ChevronDown className="w-3 h-3 text-white/50" />
-              </button>
-            )}
-
             <div
               className="min-h-[38px] px-2.5 rounded-xl bg-[#1A1D28] border border-white/10 flex items-center gap-1 text-xs font-semibold font-mono-tabular whitespace-nowrap shrink-0"
               title="Active training streak"
@@ -113,7 +80,6 @@ export function TopBar({
               onClick={() => {
                 const next = !notifOpen;
                 setNotifOpen(next);
-                setSwitcherOpen(false);
                 if (next && unreadCount > 0) {
                   onMarkNotificationsRead();
                 }
@@ -145,95 +111,6 @@ export function TopBar({
           </div>
         )}
       </header>
-
-      {/* Quick User Switcher Drawer */}
-      {switcherOpen && (
-        <div className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-xs flex justify-center items-start pt-16 px-4">
-          <div className="w-full max-w-[398px] bg-[#12141C] border border-white/12 rounded-3xl p-4 shadow-2xl space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-white">Switch Athlete</h3>
-              <button
-                type="button"
-                onClick={() => setSwitcherOpen(false)}
-                aria-label="Close switcher"
-                className="min-w-[36px] min-h-[36px] rounded-xl flex items-center justify-center text-white/60 hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-2 max-h-[260px] overflow-y-auto">
-              {allUsers.map((u) => {
-                const isActive = u.id === activeUser.id;
-                return (
-                  <button
-                    key={u.id}
-                    type="button"
-                    onClick={() => {
-                      onSwitchUser(u.id);
-                      setSwitcherOpen(false);
-                    }}
-                    className={`w-full min-h-[52px] p-2.5 rounded-2xl flex items-center justify-between border transition-all text-left ${
-                      isActive
-                        ? 'bg-[#1A1D28] border-white/25'
-                        : 'bg-[#1A1D28]/50 border-white/[0.06] hover:border-white/20'
-                    }`}
-                    style={isActive ? { borderColor: theme.primary } : undefined}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <AthleteAvatar
-                        name={u.name}
-                        avatarUrl={u.avatarUrl}
-                        gender={u.gender}
-                        sizeClass="w-9 h-9"
-                      />
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-white truncate">{u.name}</p>
-                        <p className="text-[11px] text-white/55 truncate">
-                          {getShortGoalLabel(u.goal)} · {u.streakDays}d streak
-                        </p>
-                      </div>
-                    </div>
-                    {isActive && (
-                      <span
-                        className="text-[10px] font-semibold px-2 py-0.5 rounded-lg whitespace-nowrap"
-                        style={{ backgroundColor: theme.softBg, color: theme.secondary }}
-                      >
-                        Active
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.08]">
-              <button
-                type="button"
-                onClick={() => {
-                  setSwitcherOpen(false);
-                  onAddNewAthlete();
-                }}
-                className="min-h-[44px] rounded-2xl bg-[#1A1D28] border border-white/10 text-xs font-semibold text-white flex items-center justify-center gap-1.5 hover:border-white/25"
-              >
-                <Plus className="w-3.5 h-3.5" style={{ color: theme.secondary }} />
-                <span>New Profile</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setSwitcherOpen(false);
-                  onSignOut();
-                }}
-                className="min-h-[44px] rounded-2xl bg-[#1A1D28] border border-white/10 text-xs font-semibold text-white/75 flex items-center justify-center gap-1.5 hover:text-white"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Auth Screen</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Notifications Drawer */}
       {notifOpen && (
