@@ -32,7 +32,7 @@ interface OnboardingWizardProps {
     split: UserProfile['split'];
     quotes: string[];
     blueprintSource: 'gemini-2.5-flash' | 'kinetix-engine';
-  }) => void;
+  }) => Promise<void> | void;
 }
 
 const VIBES: { title: MotivationVibe; preview: string }[] = [
@@ -59,7 +59,7 @@ export function OnboardingWizard({
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [name, setName] = useState('');
   const [email, setEmail] = useState(initialEmail);
-  const [password, setPassword] = useState(initialPassword || 'kinetix');
+  const [password, setPassword] = useState(initialPassword || 'kinetix123');
   const [gender, setGender] = useState<Gender>('female');
   const [heightCm, setHeightCm] = useState(168);
   const [weightKg, setWeightKg] = useState(58);
@@ -122,19 +122,22 @@ export function OnboardingWizard({
       schedule,
     });
 
-    setIsGenerating(false);
-    onComplete({
-      name: cleanName,
-      email: cleanEmail,
-      password: password || 'kinetix',
-      gender,
-      goal,
-      metrics,
-      schedule,
-      split: result.split,
-      quotes: result.quotes,
-      blueprintSource: result.source,
-    });
+    try {
+      await onComplete({
+        name: cleanName,
+        email: cleanEmail,
+        password: password.trim().length >= 6 ? password.trim() : 'kinetix123',
+        gender,
+        goal,
+        metrics,
+        schedule,
+        split: result.split,
+        quotes: result.quotes,
+        blueprintSource: result.source,
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -202,18 +205,33 @@ export function OnboardingWizard({
               </div>
 
               {!initialEmail && (
-                <div className="space-y-2">
-                  <label htmlFor="athlete-email" className="text-xs font-semibold text-white/80 block">
-                    Email (optional for quick switch)
-                  </label>
-                  <input
-                    id="athlete-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="athlete@kinetix.fit"
-                    className="w-full min-h-[46px] px-4 bg-[#1A1D28] border border-white/10 rounded-2xl text-sm text-white placeholder:text-white/35 focus:outline-none focus:border-white/30"
-                  />
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="space-y-1.5">
+                    <label htmlFor="athlete-email" className="text-xs font-semibold text-white/80 block">
+                      Email (used for cloud sync &amp; sign-in)
+                    </label>
+                    <input
+                      id="athlete-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="athlete@kinetix.fit"
+                      className="w-full min-h-[46px] px-4 bg-[#1A1D28] border border-white/10 rounded-2xl text-sm text-white placeholder:text-white/35 focus:outline-none focus:border-white/30"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="athlete-password" className="text-xs font-semibold text-white/80 block">
+                      Password (min 6 characters)
+                    </label>
+                    <input
+                      id="athlete-password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Create password"
+                      className="w-full min-h-[46px] px-4 bg-[#1A1D28] border border-white/10 rounded-2xl text-sm text-white placeholder:text-white/35 focus:outline-none focus:border-white/30"
+                    />
+                  </div>
                 </div>
               )}
 

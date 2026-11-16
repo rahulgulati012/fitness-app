@@ -9,7 +9,7 @@ import { PWAInstallButton } from './PWAInstallButton';
 interface AuthScreenProps {
   users: UserProfile[];
   onQuickSwitch: (userId: string) => void;
-  onEmailSignIn: (email: string, password: string) => string | undefined;
+  onEmailSignIn: (email: string, password: string) => Promise<string | undefined>;
   onStartOnboarding: (prefill?: { email?: string; password?: string }) => void;
   onOpenCloudModal: () => void;
 }
@@ -25,10 +25,11 @@ export function AuthScreen({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const theme = UNIVERSAL_THEME;
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -45,8 +46,13 @@ export function AuthScreen({
       return;
     }
 
-    const err = onEmailSignIn(email, password);
-    if (err) setError(err);
+    setSubmitting(true);
+    try {
+      const err = await onEmailSignIn(email, password);
+      if (err) setError(err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -199,13 +205,20 @@ export function AuthScreen({
 
             <button
               type="submit"
-              className="w-full min-h-[48px] rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+              disabled={submitting}
+              className="w-full min-h-[48px] rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-transform active:scale-[0.98] disabled:opacity-65"
               style={{
                 background: theme.gradientCss,
                 boxShadow: `0 8px 24px ${theme.glow}`,
               }}
             >
-              <span>{mode === 'signin' ? 'Enter Command Center' : 'Continue to Athlete Setup'}</span>
+              <span>
+                {submitting
+                  ? 'Signing In...'
+                  : mode === 'signin'
+                    ? 'Enter Command Center'
+                    : 'Continue to Athlete Setup'}
+              </span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>

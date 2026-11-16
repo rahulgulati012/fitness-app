@@ -69,98 +69,70 @@ export const AVATAR_OPTIONS: Record<Gender, string[]> = {
   ],
 };
 
-export const SUPABASE_SCHEMA_SQL = `-- KINETIX Multi-User Physique & Bio-Recovery Schema (Supabase / PostgreSQL)
--- Run in Supabase SQL Editor to enable real-time cloud sync & Squad leaderboards
+export const SUPABASE_SCHEMA_SQL = `-- KINETIX Multi-User Schema for Supabase (profiles, user_plans, daily_logs)
+-- Run in Supabase SQL Editor to enable real-time cloud auth, sync & Squad search
 
-create extension if not exists "uuid-ossp";
+create extension if not exists "pgcrypto";
 
-create table if not exists public.athletes (
-  id uuid primary key default uuid_generate_v4(),
-  auth_user_id uuid references auth.users(id) on delete cascade,
-  username text unique not null,
-  display_name text not null,
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
   email text unique not null,
-  avatar_url text,
+  display_name text not null,
   gender text check (gender in ('female', 'male')) not null,
-  physique_goal text not null,
-  height_cm integer not null default 170,
-  weight_kg numeric(5,2) not null default 65.0,
-  age integer not null default 26,
+  height numeric(5,1) not null default 170,
+  weight numeric(5,2) not null default 65.0,
+  goal text not null,
   workout_time text not null default '18:00',
-  wake_time text not null default '06:30',
   bed_time text not null default '22:30',
-  motivation_vibe text not null default 'Confident & Indulging',
-  streak_days integer not null default 0,
-  hype_received integer not null default 0,
-  training_split jsonb not null default '[]'::jsonb,
-  personalized_quotes jsonb not null default '[]'::jsonb,
+  streak integer not null default 1,
+  squad_ids jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
-create table if not exists public.squad_connections (
-  athlete_id uuid references public.athletes(id) on delete cascade not null,
-  friend_id uuid references public.athletes(id) on delete cascade not null,
-  created_at timestamptz not null default now(),
-  primary key (athlete_id, friend_id)
+create table if not exists public.user_plans (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references public.profiles(id) on delete cascade unique not null,
+  workout_json jsonb not null default '[]'::jsonb,
+  quotes_json jsonb not null default '[]'::jsonb,
+  updated_at timestamptz not null default now()
 );
 
-create table if not exists public.daily_bio_logs (
-  id uuid primary key default uuid_generate_v4(),
-  athlete_id uuid references public.athletes(id) on delete cascade not null,
+create table if not exists public.daily_logs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references public.profiles(id) on delete cascade not null,
   log_date date not null default current_date,
-  water_ml integer not null default 0,
-  steps integer not null default 0,
-  sleep_hours numeric(3,1) not null default 0.0,
   workout_completed boolean not null default false,
-  completed_at timestamptz,
-  unique (athlete_id, log_date)
-);
-
-create table if not exists public.body_measurements (
-  id uuid primary key default uuid_generate_v4(),
-  athlete_id uuid references public.athletes(id) on delete cascade not null,
-  recorded_at date not null default current_date,
-  weight_kg numeric(5,2) not null,
-  waist_cm numeric(5,1),
-  hip_cm numeric(5,1),
-  chest_cm numeric(5,1)
-);
-
-create table if not exists public.workout_set_logs (
-  id uuid primary key default uuid_generate_v4(),
-  athlete_id uuid references public.athletes(id) on delete cascade not null,
-  log_date date not null default current_date,
-  day_index integer not null,
-  exercise_name text not null,
-  set_number integer not null,
-  weight_kg numeric(6,2) not null default 0,
-  reps integer not null default 0,
-  completed boolean not null default false,
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.squad_hype_events (
-  id uuid primary key default uuid_generate_v4(),
-  from_athlete_id uuid references public.athletes(id) on delete cascade not null,
-  to_athlete_id uuid references public.athletes(id) on delete cascade not null,
-  created_at timestamptz not null default now()
+  water_ml integer not null default 0,
+  steps_count integer not null default 0,
+  sleep_hours numeric(3,1) not null default 8.0,
+  updated_at timestamptz not null default now(),
+  unique (user_id, log_date)
 );
 
 -- Row Level Security Policies
-alter table public.athletes enable row level security;
-alter table public.squad_connections enable row level security;
-alter table public.daily_bio_logs enable row level security;
-alter table public.body_measurements enable row level security;
-alter table public.workout_set_logs enable row level security;
-alter table public.squad_hype_events enable row level security;
+alter table public.profiles enable row level security;
+alter table public.user_plans enable row level security;
+alter table public.daily_logs enable row level security;
 
-create policy "Athletes readable by squad" on public.athletes for select using (true);
-create policy "Athletes update own profile" on public.athletes for update using (auth.uid() = auth_user_id);
-create policy "Bio logs readable by squad" on public.daily_bio_logs for select using (true);
-create policy "Bio logs mutable by owner" on public.daily_bio_logs for all using (
-  athlete_id in (select id from public.athletes where auth_user_id = auth.uid())
-);`;
+create policy "Profiles readable by authenticated athletes"
+  on public.profiles for select to authenticated using (true);
+create policy "Users insert own profile"
+  on public.profiles for insert to authenticated with check (auth.uid() = id);
+create policy "Users update own profile"
+  on public.profiles for update to authenticated using (auth.uid() = id);
+
+create policy "Plans readable by authenticated athletes"
+  on public.user_plans for select to authenticated using (true);
+create policy "Users manage own plan"
+  on public.user_plans for all to authenticated
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "Daily logs readable by authenticated athletes"
+  on public.daily_logs for select to authenticated using (true);
+create policy "Users manage own daily logs"
+  on public.daily_logs for all to authenticated
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);`;
 
 export function getTodayDateKey(): string {
   const now = new Date();
@@ -673,6 +645,7 @@ export const db = {
   },
 
   createUserProfile(input: {
+    id?: string;
     name: string;
     email: string;
     password: string;
@@ -698,7 +671,7 @@ export const db = {
       : allowedGoals[0].title;
 
     const newUser: UserProfile = {
-      id: `athlete-${Date.now()}`,
+      id: input.id ?? `athlete-${Date.now()}`,
       username: makeUsername(input.name),
       name: input.name.trim(),
       email: input.email.trim().toLowerCase(),
@@ -1005,6 +978,42 @@ export const db = {
       ...u,
       notifications: u.notifications.map((n) => ({ ...n, read: true })),
     }));
+  },
+
+  upsertSyncedUser(remoteUser: UserProfile, setActive = false): UserProfile {
+    const state = loadState();
+    const hydrated = hydrateLegacyUser(remoteUser).user;
+    const idx = state.users.findIndex(
+      (u) => u.id === hydrated.id || u.email.toLowerCase() === hydrated.email.toLowerCase()
+    );
+    if (idx >= 0) {
+      state.users[idx] = hydrated;
+    } else {
+      state.users = [hydrated, ...state.users];
+    }
+    if (setActive) {
+      state.activeUserId = hydrated.id;
+    }
+    saveState(state);
+    return hydrated;
+  },
+
+  mergeRemoteUsers(remoteUsers: UserProfile[]): UserProfile[] {
+    if (remoteUsers.length === 0) return loadState().users;
+    const state = loadState();
+    for (const r of remoteUsers) {
+      const hydrated = hydrateLegacyUser(r).user;
+      const idx = state.users.findIndex(
+        (u) => u.id === hydrated.id || u.email.toLowerCase() === hydrated.email.toLowerCase()
+      );
+      if (idx >= 0) {
+        state.users[idx] = hydrated;
+      } else {
+        state.users.push(hydrated);
+      }
+    }
+    saveState(state);
+    return state.users;
   },
 
   resetDemoData(): KinetixDbState {

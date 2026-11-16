@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   Calendar,
@@ -7,6 +7,7 @@ import {
   Clock,
   Dumbbell,
   Flame,
+  Loader2,
   Plus,
   Search,
   Trash2,
@@ -26,6 +27,10 @@ import {
   resolveTheme,
 } from '../services/theme';
 import { getTodaySplitDayIndex } from '../services/db';
+import {
+  refreshSquadLiveStatuses,
+  searchSupabaseAthletes,
+} from '../services/supabaseSync';
 import { AthleteAvatar } from './AthleteAvatar';
 
 interface SquadTabProps {
@@ -34,6 +39,7 @@ interface SquadTabProps {
   theme: ThemeTokens;
   onSendHype: (targetUserId: string) => void;
   onToggleSquadMember: (friendId: string) => void;
+  onSyncRemoteUsers?: (users: UserProfile[]) => void;
 }
 
 export function SquadTab({
@@ -42,18 +48,66 @@ export function SquadTab({
   theme,
   onSendHype,
   onToggleSquadMember,
+  onSyncRemoteUsers,
 }: SquadTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+  const [searchingCloud, setSearchingCloud] = useState(false);
+  const [remoteSearchResults, setRemoteSearchResults] = useState<UserProfile[] | null>(null);
 
   const todayIdx = getTodaySplitDayIndex();
 
-  // Personal Squad Members (plus self summary at top or strictly personal friends)
+  // Refresh live daily_logs & profiles for added Squad members on mount/update
+  useEffect(() => {
+    let cancelled = false;
+    if (activeUser.squadIds.length === 0) return;
+
+    refreshSquadLiveStatuses(activeUser.squadIds).then((refreshed) => {
+      if (!cancelled && refreshed.length > 0) {
+        onSyncRemoteUsers?.(refreshed);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeUser.id, activeUser.squadIds.join(',')]);
+
+  // Query Supabase profiles + daily_logs when user searches athletes
+  useEffect(() => {
+    const clean = searchQuery.trim();
+    if (!clean) {
+      setRemoteSearchResults(null);
+      setSearchingCloud(false);
+      return;
+    }
+
+    let cancelled = false;
+    setSearchingCloud(true);
+
+    const timer = setTimeout(async () => {
+      const { results } = await searchSupabaseAthletes(clean, activeUser.id);
+      if (!cancelled) {
+        setRemoteSearchResults(results);
+        setSearchingCloud(false);
+        if (results.length > 0) {
+          onSyncRemoteUsers?.(results);
+        }
+      }
+    }, 220);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [searchQuery, activeUser.id]);
+
+  // Personal Squad Members
   const squadMembers = allUsers.filter((u) => activeUser.squadIds.includes(u.id));
   const otherAthletes = allUsers.filter((u) => u.id !== activeUser.id);
 
   const cleanQuery = searchQuery.trim().toLowerCase();
-  const searchResults = cleanQuery
+  const localSearchResults = cleanQuery
     ? otherAthletes.filter(
         (u) =>
           u.name.toLowerCase().includes(cleanQuery) ||
@@ -62,6 +116,7 @@ export function SquadTab({
           u.goal.toLowerCase().includes(cleanQuery)
       )
     : [];
+  const searchResults = remoteSearchResults ?? localSearchResults;
 
   const discoverSuggestions = otherAthletes.filter((u) => !activeUser.squadIds.includes(u.id));
 
@@ -146,12 +201,22 @@ export function SquadTab({
         {/* Search Results */}
         {cleanQuery && (
           <div className="space-y-2 pt-1">
-            <p className="text-[11px] font-semibold text-white/55">
-              Search Results ({searchResults.length})
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-semibold text-white/55">
+                Search Results ({searchResults.length})
+              </p>
+              {searchingCloud && (
+                <span className="inline-flex items-center gap-1 text-[10px] text-white/50">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>Syncing...</span>
+                </span>
+              )}
+            </div>
             {searchResults.length === 0 ? (
               <p className="text-xs text-white/50 py-2">
-                No registered athlete matched &ldquo;{searchQuery}&rdquo;.
+                {searchingCloud
+                  ? 'Searching registered athletes...'
+                  : `No registered athlete matched "${searchQuery}".`}
               </p>
             ) : (
               searchResults.map((candidate) => {
@@ -160,7 +225,8 @@ export function SquadTab({
                 return (
                   <div
                     key={candidate.id}
-                    className="p-2.5 rounded-2xl bg-[#1A1D28]/90 border border-white/[0.08] flex items-center justify-between gap-2.5"
+                    onClick={() => setSelectedFriendId(candidate.id)}
+                    className="p-2.5 rounded-2xl bg-[#1A1D28]/90 border border-white/[0.08] hover:border-white/20 flex items-center justify-between gap-2.5 cursor-pointer transition-colors"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <AthleteAvatar
@@ -170,19 +236,36 @@ export function SquadTab({
                         sizeClass="w-9 h-9"
                       />
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-white truncate">{candidate.name}</p>
-                        <p className="text-[10px] text-white/55 truncate">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-bold text-white truncate">{candidate.name}</p>
+                          <span
+                            className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap"
+                            style={
+                              candidate.dailyLog.workoutCompleted
+                                ? { backgroundColor: cTheme.softBg, color: cTheme.secondary }
+                                : { backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.65)' }
+                            }
+                          >
+                            {candidate.dailyLog.workoutCompleted ? 'Crushed It' : 'In Progress'}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-white/55 truncate mt-0.5">
                           {candidate.username} ·{' '}
                           <span style={{ color: cTheme.secondary }}>
                             {getShortGoalLabel(candidate.goal)}
-                          </span>
+                          </span>{' '}
+                          · {candidate.dailyLog.steps.toLocaleString()} steps ·{' '}
+                          {candidate.dailyLog.waterMl}ml
                         </p>
                       </div>
                     </div>
 
                     <button
                       type="button"
-                      onClick={() => onToggleSquadMember(candidate.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleSquadMember(candidate.id);
+                      }}
                       className="min-h-[38px] px-3 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 shrink-0 transition-all active:scale-95"
                       style={
                         isAdded

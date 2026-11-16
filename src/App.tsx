@@ -8,6 +8,15 @@ import type {
 } from './types/kinetix';
 import { db, getTodaySplitDayIndex } from './services/db';
 import {
+  restoreSupabaseSession,
+  signInWithSupabase,
+  signOutFromSupabase,
+  signUpWithSupabase,
+  syncDailyLogToSupabase,
+  syncProfileToSupabase,
+  syncUserPlanToSupabase,
+} from './services/supabaseSync';
+import {
   applyThemeCssVars,
   calculateSleepTargetHours,
   resolveTheme,
@@ -48,6 +57,21 @@ export default function App() {
   useEffect(() => {
     applyThemeCssVars(theme);
   }, [theme]);
+
+  // Restore active Supabase session (if configured and signed in) on boot
+  useEffect(() => {
+    let cancelled = false;
+    restoreSupabaseSession().then((cloudUser) => {
+      if (!cancelled && cloudUser) {
+        setUsers(db.getUsers());
+        setActiveUser(cloudUser);
+        setViewMode('app');
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const cleanInjected = () => {
@@ -96,8 +120,11 @@ export default function App() {
     setViewMode('app');
   };
 
-  const handleEmailSignIn = (email: string, password: string): string | undefined => {
-    const res = db.signInWithEmail(email, password);
+  const handleEmailSignIn = async (
+    email: string,
+    password: string
+  ): Promise<string | undefined> => {
+    const res = await signInWithSupabase(email, password);
     if (res.error || !res.user) {
       return res.error ?? 'Unable to sign in.';
     }
@@ -113,7 +140,7 @@ export default function App() {
     setViewMode('onboarding');
   };
 
-  const handleOnboardingComplete = (data: {
+  const handleOnboardingComplete = async (data: {
     name: string;
     email: string;
     password: string;
@@ -125,20 +152,22 @@ export default function App() {
     quotes: string[];
     blueprintSource: 'gemini-2.5-flash' | 'kinetix-engine';
   }) => {
-    const created = db.createUserProfile(data);
+    const { user: created, notice } = await signUpWithSupabase(data);
     syncUsers(created);
     setSelectedWorkoutDay(getTodaySplitDayIndex());
     setActiveTab('home');
     setViewMode('app');
     pushToast({
       title: 'Custom Blueprint Ready',
-      body: `${created.name.split(/\s+/)[0]}, your 7-day ${created.goal} routine is active.`,
+      body: notice
+        ? `${created.name.split(/\s+/)[0]}, ${notice}`
+        : `${created.name.split(/\s+/)[0]}, your 7-day ${created.goal} routine is active.`,
       category: 'success',
     });
   };
 
   const handleSignOut = () => {
-    db.signOut();
+    void signOutFromSupabase();
     setActiveUser(null);
     setViewMode('auth');
   };
@@ -180,6 +209,7 @@ export default function App() {
       ],
     }));
     syncUsers(updated);
+    if (updated) void syncProfileToSupabase(updated);
 
     if (typeof window !== 'undefined' && 'Notification' in window) {
       try {
@@ -235,6 +265,7 @@ export default function App() {
               onMarkNotificationsRead={() => {
                 const updated = db.markNotificationsRead(activeUser.id);
                 syncUsers(updated);
+                if (updated) void syncProfileToSupabase(updated);
               }}
             />
 
@@ -246,14 +277,17 @@ export default function App() {
                   onUpdateWater={(delta, reset) => {
                     const updated = db.updateWater(activeUser.id, delta, reset);
                     syncUsers(updated);
+                    if (updated) void syncDailyLogToSupabase(updated);
                   }}
                   onUpdateSteps={(delta) => {
                     const updated = db.updateSteps(activeUser.id, delta);
                     syncUsers(updated);
+                    if (updated) void syncDailyLogToSupabase(updated);
                   }}
                   onUpdateSleep={(delta) => {
                     const updated = db.updateSleep(activeUser.id, delta);
                     syncUsers(updated);
+                    if (updated) void syncDailyLogToSupabase(updated);
                   }}
                   onStartSession={(dayIdx) => {
                     setSelectedWorkoutDay(dayIdx);
@@ -271,6 +305,7 @@ export default function App() {
                   onToggleWarmupDrill={(dayIdx, drillId) => {
                     const updated = db.toggleWarmupDrill(activeUser.id, dayIdx, drillId);
                     syncUsers(updated);
+                    if (updated) void syncUserPlanToSupabase(updated);
                   }}
                   onUpdateSet={(dayIdx, exId, setId, patch) => {
                     const updated = db.updateExerciseSet(
@@ -281,10 +316,16 @@ export default function App() {
                       patch
                     );
                     syncUsers(updated);
+                    if (updated) void syncUserPlanToSupabase(updated);
                   }}
                   onFinishWorkout={(dayIdx) => {
                     const updated = db.completeWorkoutDay(activeUser.id, dayIdx);
                     syncUsers(updated);
+                    if (updated) {
+                      void syncDailyLogToSupabase(updated);
+                      void syncUserPlanToSupabase(updated);
+                      void syncProfileToSupabase(updated);
+                    }
                   }}
                 />
               )}
@@ -296,6 +337,7 @@ export default function App() {
                   onLogMeasurements={(entry) => {
                     const updated = db.logBodyMeasurement(activeUser.id, entry);
                     syncUsers(updated);
+                    if (updated) void syncProfileToSupabase(updated);
                     pushToast({
                       title: 'Measurements Logged',
                       body: `Updated body weight to ${entry.weightKg} kg and synced physique graph.`,
@@ -310,9 +352,14 @@ export default function App() {
                   activeUser={activeUser}
                   allUsers={users}
                   theme={theme}
+                  onSyncRemoteUsers={(remoteUsers) => {
+                    const merged = db.mergeRemoteUsers(remoteUsers);
+                    setUsers(merged);
+                  }}
                   onToggleSquadMember={(friendId) => {
                     const res = db.toggleSquadMember(activeUser.id, friendId);
                     syncUsers(res.user);
+                    if (res.user) void syncProfileToSupabase(res.user);
                     pushToast({
                       title: res.added ? 'Added to Squad' : 'Removed from Squad',
                       body: res.added
@@ -354,6 +401,10 @@ export default function App() {
                       planVersion: patch.planVersion,
                     }));
                     syncUsers(updated);
+                    if (updated) {
+                      void syncProfileToSupabase(updated);
+                      void syncUserPlanToSupabase(updated);
+                    }
                     pushToast({
                       title: 'Custom Blueprint Updated',
                       body: `New split active (${patch.goal}): ${patch.split[0]?.title ?? 'Day 1'}`,
@@ -363,6 +414,7 @@ export default function App() {
                   onUpdateReminders={(reminders: ReminderSettings) => {
                     const updated = db.updateReminders(activeUser.id, reminders);
                     syncUsers(updated);
+                    if (updated) void syncProfileToSupabase(updated);
                   }}
                   onTestReminder={handleTestReminder}
                   onOpenCloudModal={() => setCloudModalOpen(true)}
